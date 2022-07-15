@@ -21,5 +21,7 @@ add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(test)
 
-add_subdirectory(python)
+if (PYTHON_BINDINGS)
+    add_subdirectory(python)
+endif()
 
