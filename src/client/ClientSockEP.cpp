@@ -113,12 +113,10 @@ void ClientSockEP::runThread()
 int ClientSockEP::stopRecvThread()
 {
 	simpleLogger.debug << "Stopping recv thread\n";
-	if (!threadRunning_)
+	if (threadRunning_)
 	{
-		simpleLogger.debug << "Thread not running\n";
-		return 0;
+		close(pipeFd_[1]);
 	}
-	close(pipeFd_[1]);
 	if (recvThread_.joinable())
 	{
 		simpleLogger.debug << "Joining...\n";
