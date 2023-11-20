@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.21)
 
+
+if(TARGET sockep::sockep)
+  get_target_property(sockep_loc sockep::sockep SOURCE_DIR)
+  message("NOT including sockep from ${CMAKE_CURRENT_LIST_DIR}")
+  message("sockep was included from ${sockep_loc}")
+  return()
+endif()
+
+message("Including sockep from ${CMAKE_CURRENT_LIST_DIR}")
+
 project(sockep CXX)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -24,7 +34,7 @@ add_subdirectory(src)
 if (PROJECT_IS_TOP_LEVEL) # New in CMAKE 3.21
   add_subdirectory(examples)
   add_subdirectory(test)
-  
+
   add_subdirectory(python)
 endif()
 
