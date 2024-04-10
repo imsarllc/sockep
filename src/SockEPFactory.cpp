@@ -67,8 +67,10 @@ SockEPFactory::createUdpServerSockEP(std::string ipaddr, int port,
 	return std::unique_ptr<UdpServerSockEP>(new UdpServerSockEP(ipaddr, port, callback));
 }
 
-std::unique_ptr<IClientSockEP> SockEPFactory::createUdpClientSockEP(std::string serverIpaddr, int port)
+std::unique_ptr<IClientSockEP> SockEPFactory::createUdpClientSockEP(std::string serverIpaddr, int port, int ttl)
 {
 	simpleLogger.debug << "Factory creating Udp Client Socket\n";
-	return std::unique_ptr<UdpClientSockEP>(new UdpClientSockEP(serverIpaddr, port));
+	std::unique_ptr<UdpClientSockEP> udpClient(new UdpClientSockEP(serverIpaddr, port));
+	udpClient->setTtl(ttl);
+	return udpClient;
 }

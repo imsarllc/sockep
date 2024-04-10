@@ -169,6 +169,20 @@ int UdpClientSockEP::getSock() const
 	return sock_;
 }
 
+void UdpClientSockEP::setTtl(int ttl)
+{
+	if (ttl < 0 || ttl > 255 || sock_ == -1)
+	{
+		return;
+	}
+
+	int result = setsockopt(sock_, SOL_IP, IP_TTL, &ttl, sizeof(ttl));
+	if (result != 0)
+	{
+		simpleLogger.warning << "Failed to set ttl...\n";
+	}
+}
+
 void UdpClientSockEP::handleIncomingMessage()
 {
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_in);
