@@ -176,10 +176,18 @@ void UdpClientSockEP::setTtl(int ttl)
 		return;
 	}
 
-	int result = setsockopt(sock_, SOL_IP, IP_TTL, &ttl, sizeof(ttl));
+	int result;
+
+	result = setsockopt(sock_, SOL_IP, IP_TTL, &ttl, sizeof(ttl));
 	if (result != 0)
 	{
-		simpleLogger.warning << "Failed to set ttl...\n";
+		simpleLogger.warning << "Failed to set IP_TTL...\n";
+	}
+	
+	result = setsockopt(sock_, SOL_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+	if (result != 0)
+	{
+		simpleLogger.warning << "Failed to set IP_MULTICAST_TTL...\n";
 	}
 }
 
