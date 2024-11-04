@@ -7,11 +7,11 @@ int main(int argc, char *argv[])
 	std::unique_ptr<sockep::IClientSockEP> client;
 	if (argc > 1)
 	{
-		client = sockep::SockEPFactory::createUnixDgramClientSockEP(argv[1], "/tmp/fartserver");
+		client = sockep::SockEPFactory::createUnixDgramClientSockEP(argv[1], "/tmp/unixdgramserver");
 	}
 	else
 	{
-		client = sockep::SockEPFactory::createUnixDgramClientSockEP("/tmp/fartclient", "/tmp/fartserver");
+		client = sockep::SockEPFactory::createUnixDgramClientSockEP("/tmp/unixdgramclient", "/tmp/unixdgramserver");
 	}
 
 	std::cout << "Client valid: " << (client->isValid() ? "true" : "false") << std::endl;

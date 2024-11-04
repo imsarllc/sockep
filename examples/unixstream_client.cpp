@@ -9,12 +9,12 @@ int main(int argc, char *argv[])
 	if (argc > 1)
 	{
 		client = std::unique_ptr<sockep::IClientSockEP>(
-		    sockep::SockEPFactory::createUnixStreamClientSockEP(argv[1], "/tmp/fartserver"));
+		    sockep::SockEPFactory::createUnixStreamClientSockEP(argv[1], "/tmp/unixstreamserver"));
 	}
 	else
 	{
 		client = std::unique_ptr<sockep::IClientSockEP>(
-		    sockep::SockEPFactory::createUnixStreamClientSockEP("/tmp/fartclient", "/tmp/fartserver"));
+		    sockep::SockEPFactory::createUnixStreamClientSockEP("/tmp/unixstreamclient", "/tmp/unixstreamserver"));
 	}
 
 	std::cout << "Client valid: " << (client->isValid() ? "true" : "false") << std::endl;
