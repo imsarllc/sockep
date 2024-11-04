@@ -34,6 +34,8 @@ public:
 	void setSock(int sock) override;
 	int getSock() const override;
 
+	void setTtl(int ttl);
+
 private:
 	bool connectSocket();
 	bool disconnectSocket();

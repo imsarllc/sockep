@@ -27,6 +27,6 @@ public:
 	static std::unique_ptr<IClientSockEP> createTcpClientSockEP(std::string serverIpaddr, int port);
 	static std::unique_ptr<IServerSockEP>
 	createUdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback);
-	static std::unique_ptr<IClientSockEP> createUdpClientSockEP(std::string serverIpaddr, int port);
+	static std::unique_ptr<IClientSockEP> createUdpClientSockEP(std::string serverIpaddr, int port, int ttl = -1);
 };
 } // namespace sockep
