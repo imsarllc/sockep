@@ -22,7 +22,7 @@ int main()
 {
 	running = true;
 
-	srvr = sockep::SockEPFactory::createUnixDgramServerSockEP("/tmp/fartserver", messageHandler);
+	srvr = sockep::SockEPFactory::createUnixDgramServerSockEP("/tmp/unixdgramserver", messageHandler);
 
 	std::cout << "Server valid: " << (srvr->isValid() ? "true" : "false") << std::endl;
 	srvr->startServer();
