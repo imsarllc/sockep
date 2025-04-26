@@ -10,7 +10,6 @@
 
 using namespace sockep;
 
-// ServerSockEP::ServerSockEP(void (*callback)(int, uint8_t*, size_t)) : callback_{callback}
 ServerSockEP::ServerSockEP(std::function<void(int, const char *, size_t)> callback) : callback_{callback} {}
 
 ServerSockEP::~ServerSockEP()
@@ -43,8 +42,7 @@ int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 		{
 			// client already in list, return id.
 
-			// need to clear Saddr or the destructor of newClient will
-			// unlink the socket when it goes out of scope
+			// need to clear Saddr or the destructor of newClient will unlink the socket when it goes out of scope
 			newClient->clearSaddr();
 
 			return client.first;
@@ -85,9 +83,6 @@ void ServerSockEP::runServer()
 		return;
 	}
 
-	// std::cout << "Successfully started server thread" << std::endl;
-	fd_set rfds;
-
 	// create the pollfds
 	std::vector<struct pollfd> pfds;
 	std::vector<struct pollfd> newPfds;
@@ -108,8 +103,6 @@ void ServerSockEP::runServer()
 
 	while (serverRunning_)
 	{
-		// std::cout << "server tick" << std::endl;
-
 		// -1 == no timeout
 		int pollStatus = poll(pfds.data(), pfds.size(), -1);
 		if (pollStatus == -1)
@@ -138,7 +131,6 @@ void ServerSockEP::runServer()
 			auto pfdToRemoveLoc = find_if(pfds.begin(), pfds.end(), matchPfd);
 			if (pfdToRemoveLoc != pfds.end())
 			{ // found something to delete
-				// std::cout << "Deleting " << pfdToRemoveLoc->fd << "\n";
 				pfds.erase(pfdToRemoveLoc);
 			}
 		};
