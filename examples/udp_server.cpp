@@ -22,12 +22,20 @@ void messageHandler(int clientId, const char *msg, size_t msgLen)
 	}
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 	running = true;
 
-	srvr =
-	    std::unique_ptr<sockep::IServerSockEP>(sockep::SockEPFactory::createUdpServerSockEP("", 5678, messageHandler));
+	if (argc == 3) // multicast
+	{
+		srvr = std::unique_ptr<sockep::IServerSockEP>(
+		    sockep::SockEPFactory::createUdpServerSockEP("", 5678, messageHandler, argv[1], argv[2]));
+	}
+	else
+	{
+		srvr = std::unique_ptr<sockep::IServerSockEP>(
+		    sockep::SockEPFactory::createUdpServerSockEP("", 5678, messageHandler));
+	}
 
 	std::cout << "Server valid: " << (srvr->isValid() ? "true" : "false") << std::endl;
 	srvr->startServer();

@@ -61,10 +61,11 @@ std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string 
 
 std::unique_ptr<IServerSockEP>
 SockEPFactory::createUdpServerSockEP(std::string ipaddr, int port,
-                                     std::function<void(int, const char *, size_t)> callback)
+                                     std::function<void(int, const char *, size_t)> callback,
+                                     const std::string &multicastAddr, const std::string &interfaceAddr)
 {
 	simpleLogger.debug << "Factory creating Udp Server Socket\n";
-	return std::unique_ptr<UdpServerSockEP>(new UdpServerSockEP(ipaddr, port, callback));
+	return std::unique_ptr<UdpServerSockEP>(new UdpServerSockEP(ipaddr, port, callback, multicastAddr, interfaceAddr));
 }
 
 std::unique_ptr<IClientSockEP> SockEPFactory::createUdpClientSockEP(std::string serverIpaddr, int port, int ttl)
