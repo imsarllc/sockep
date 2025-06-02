@@ -48,7 +48,10 @@ UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<voi
 	// Join multicast group if given. If interfaceAddr is not given, use INADDR_ANY and the system will choose one.
 	if (multicastAddr != "")
 	{
-		joinMulticastGroup(interfaceAddr, multicastAddr);
+		if(!joinMulticastGroup(interfaceAddr, multicastAddr))
+		{
+			isValid_ = false;
+		}
 	}
 
 
@@ -102,7 +105,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 	}
 }
 
-void UdpServerSockEP::joinMulticastGroup(const std::string &interfaceAddr, const std::string &multicastAddr)
+bool UdpServerSockEP::joinMulticastGroup(const std::string &interfaceAddr, const std::string &multicastAddr)
 {
 	ip_mreq mreq{};
 	if (interfaceAddr == "")
@@ -119,7 +122,9 @@ void UdpServerSockEP::joinMulticastGroup(const std::string &interfaceAddr, const
 	{
 		simpleLogger.error << "error joining multicast group. setsockopt - IP_ADD_MEMBERSHIP: ";
 		simpleLogger.error << "multicast: " << multicastAddr << " interface: " << interfaceAddr;
+		return false;
 	}
+	return true;
 }
 
 std::unique_ptr<ISSClientSockEP> UdpServerSockEP::createNewClient()

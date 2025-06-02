@@ -22,7 +22,7 @@ private:
 	// void runServer() override; // meant to be the function for the receive thread
 	void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
 	                      std::vector<struct pollfd> &removePfds) override;
-	void joinMulticastGroup(const std::string &interfaceAddr, const std::string &multicastAddr);
+	bool joinMulticastGroup(const std::string &interfaceAddr, const std::string &multicastAddr);
 	std::unique_ptr<ISSClientSockEP> createNewClient() override;
 
 	struct sockaddr_in saddr_;
