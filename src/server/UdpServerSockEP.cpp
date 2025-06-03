@@ -8,7 +8,8 @@
 
 using namespace sockep;
 
-UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback)
+UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback,
+                                 const std::string &multicastAddr, const std::string &interfaceAddr)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing UDP Server Socket...\n";
@@ -43,6 +44,16 @@ UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<voi
 		close(sock_);
 		return;
 	}
+
+	// Join multicast group if given. If interfaceAddr is not given, use INADDR_ANY and the system will choose one.
+	if (multicastAddr != "")
+	{
+		if(!joinMulticastGroup(interfaceAddr, multicastAddr))
+		{
+			isValid_ = false;
+		}
+	}
+
 
 	isValid_ = true;
 }
@@ -92,6 +103,28 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			break;
 		}
 	}
+}
+
+bool UdpServerSockEP::joinMulticastGroup(const std::string &interfaceAddr, const std::string &multicastAddr)
+{
+	ip_mreq mreq{};
+	if (interfaceAddr == "")
+	{
+		mreq.imr_interface.s_addr = INADDR_ANY;
+	}
+	else
+	{
+		mreq.imr_interface.s_addr = inet_addr(interfaceAddr.c_str());
+	}
+	mreq.imr_multiaddr.s_addr = inet_addr(multicastAddr.c_str());
+
+	if (setsockopt(sock_, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+	{
+		simpleLogger.error << "error joining multicast group. setsockopt - IP_ADD_MEMBERSHIP: ";
+		simpleLogger.error << "multicast: " << multicastAddr << " interface: " << interfaceAddr;
+		return false;
+	}
+	return true;
 }
 
 std::unique_ptr<ISSClientSockEP> UdpServerSockEP::createNewClient()

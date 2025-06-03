@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "sockep/ISockEP.h"
+// #include "sockep/ISockEP.h"
 #include "sockep/client/IClientSockEP.h"
 #include "sockep/server/IServerSockEP.h"
 
@@ -25,8 +25,10 @@ public:
 	static std::unique_ptr<IServerSockEP>
 	createTcpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback);
 	static std::unique_ptr<IClientSockEP> createTcpClientSockEP(std::string serverIpaddr, int port);
-	static std::unique_ptr<IServerSockEP>
-	createUdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback);
+	static std::unique_ptr<IServerSockEP> createUdpServerSockEP(std::string ipaddr, int port,
+	                                                            std::function<void(int, const char *, size_t)> callback,
+	                                                            const std::string &multicastAddr = "",
+	                                                            const std::string &interfaceAddr = "");
 	static std::unique_ptr<IClientSockEP> createUdpClientSockEP(std::string serverIpaddr, int port, int ttl = -1);
 };
 } // namespace sockep
