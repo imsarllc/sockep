@@ -168,6 +168,11 @@ bool ServerSockEP::serverRunning()
 	return serverRunning_;
 }
 
+void ServerSockEP::setCallback(std::function<void(int, const char *, size_t)> callback)
+{
+	callback_ = callback;
+}
+
 std::vector<int> ServerSockEP::getClientIds()
 {
 	std::vector<int> clientIds;

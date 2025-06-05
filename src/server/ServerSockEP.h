@@ -9,7 +9,6 @@
 
 #include <atomic>
 #include <cstring>
-#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -39,6 +38,8 @@ public:
 	virtual void startServer() override;
 	virtual void stopServer() override;
 	bool serverRunning() override;
+
+	void setCallback(std::function<void(int, const char *, size_t)> callback) override;
 
 	virtual int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override = 0;
 	virtual int sendMessageToClient(int clientId, const std::string &msg) override = 0;

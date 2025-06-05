@@ -1,8 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
-// #include <array>
 
 // #define SOCKEP_SERVER_TRANSMIT_MSG_MAX_LEN 1000
 
@@ -17,6 +17,7 @@ public:
 	virtual void startServer() = 0;
 	virtual void stopServer() = 0;
 	virtual bool serverRunning() = 0;
+	virtual void setCallback(std::function<void(int, const char *, size_t)> callback) = 0;
 	// virtual int sendMessageToClient(int clientId, const std::array<char, SOCKEP_SERVER_TRANSMIT_MSG_MAX_LEN>, size_t
 	// msgLen) = 0;
 	virtual int sendMessageToClient(int clientId, const char *msg, size_t msgLen) = 0;
