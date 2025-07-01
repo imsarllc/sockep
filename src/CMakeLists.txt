@@ -6,7 +6,7 @@ target_include_directories(${SOCKEP}
 
 if(WIN32)
   target_sources(${SOCKEP} PRIVATE 
-    WindowsSockEPFactory.cpp
+    SockEPFactoryNoOp.cpp
   )
 else()
   target_sources(${SOCKEP} PRIVATE
