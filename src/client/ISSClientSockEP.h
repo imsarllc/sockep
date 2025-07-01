@@ -1,8 +1,14 @@
 #pragma once
 
 #include <string>
-#include <sys/socket.h>
 #include <unistd.h>
+
+// Both define 'sockaddr' for their own OS
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <sys/socket.h>
+#endif
 
 namespace sockep
 {
@@ -11,7 +17,7 @@ namespace sockep
 class ISSClientSockEP
 {
 public:
-	virtual ~ISSClientSockEP(){};
+	virtual ~ISSClientSockEP() {};
 
 	virtual int sendMessage(const char *msg, size_t msgLen) = 0;
 	virtual int sendMessage(const std::string &msg) = 0;

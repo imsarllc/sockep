@@ -1,10 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <unistd.h>
-// #include <array>
-#include <functional>
-#include <sys/socket.h>
 
 // #define SOCKEP_CLIENT_RECV_MSG_MAX_LEN 1000
 // #define SOCKEP_CLIENT_TRANSMIT_MSG_MAX_LEN 1000
@@ -15,7 +13,7 @@ namespace sockep
 class IClientSockEP
 {
 public:
-	virtual ~IClientSockEP(){};
+	virtual ~IClientSockEP() {};
 
 	virtual bool isValid() = 0;
 
