@@ -30,6 +30,7 @@ public:
 	void clearSaddr() override;
 	struct sockaddr *getSaddr() const override;
 	socklen_t getSaddrLen() const override;
+	std::string getPeerAddress() const override;
 
 	void setSock(int sock) override;
 	int getSock() const override;

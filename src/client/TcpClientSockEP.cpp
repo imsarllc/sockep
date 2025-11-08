@@ -1,5 +1,6 @@
 #include "TcpClientSockEP.h"
 
+#include <array>
 #include <cstring> // memset
 #include <iostream>
 
@@ -59,6 +60,13 @@ int TcpClientSockEP::sendMessage(const char *msg, size_t msgLen)
 int TcpClientSockEP::sendMessage(const std::string &msg)
 {
 	return sendMessage(msg.c_str(), msg.size());
+}
+
+std::string TcpClientSockEP::getPeerAddress() const
+{
+	std::array<char, INET_ADDRSTRLEN> buffer;
+	inet_ntop(AF_INET, &saddr_.sin_addr, buffer.data(), buffer.size());
+	return std::string(buffer.data());
 }
 
 std::string TcpClientSockEP::to_str() const

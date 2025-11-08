@@ -185,3 +185,14 @@ std::vector<int> ServerSockEP::getClientIds()
 
 	return clientIds;
 }
+
+std::string ServerSockEP::getClientAddress(int clientId)
+{
+	const std::lock_guard<std::mutex> lock(clientsMutex_);
+	auto it = clients_.find(clientId);
+	if (it == clients_.end())
+	{
+		return "";
+	}
+	return it->second->getPeerAddress();
+}

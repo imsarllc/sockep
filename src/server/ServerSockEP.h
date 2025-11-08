@@ -44,6 +44,7 @@ public:
 	virtual int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override = 0;
 	virtual int sendMessageToClient(int clientId, const std::string &msg) override = 0;
 	virtual std::vector<int> getClientIds() override;
+	virtual std::string getClientAddress(int clientId) override;
 	virtual std::string to_str() override
 	{
 		std::string s = "howdy";

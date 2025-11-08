@@ -1,5 +1,6 @@
 #include "UdpClientSockEP.h"
 
+#include <array>
 #include <cstring> // memset
 #include <iostream>
 
@@ -96,6 +97,13 @@ int UdpClientSockEP::sendMessage(const char *msg, size_t msgLen)
 int UdpClientSockEP::sendMessage(const std::string &msg)
 {
 	return sendMessage(msg.c_str(), msg.size());
+}
+
+std::string UdpClientSockEP::getPeerAddress() const
+{
+	std::array<char, INET_ADDRSTRLEN> buffer;
+	inet_ntop(AF_INET, &saddr_.sin_addr, buffer.data(), buffer.size());
+	return std::string(buffer.data());
 }
 
 std::string UdpClientSockEP::to_str() const

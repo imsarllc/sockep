@@ -11,7 +11,8 @@ std::unique_ptr<sockep::IServerSockEP> srvr;
 void messageHandler(int clientId, const char *msg, size_t msgLen)
 {
 	std::string message(msg, msgLen);
-	std::cout << "Got message from client " << clientId << ": " << message << std::endl;
+	std::cout << "Got message from client " << clientId << " (" << srvr->getClientAddress(clientId) << "): " << message
+	          << std::endl;
 	if (message == "quit")
 	{
 		running = false;

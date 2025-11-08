@@ -22,6 +22,7 @@ public:
 	virtual void clearSaddr() = 0;
 	virtual struct sockaddr *getSaddr() const = 0;
 	virtual socklen_t getSaddrLen() const = 0;
+	virtual std::string getPeerAddress() const = 0;
 	virtual std::string to_str() const = 0;
 	virtual void setSock(int sock) = 0;
 	virtual int getSock() const = 0;

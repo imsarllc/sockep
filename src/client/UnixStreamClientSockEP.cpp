@@ -68,6 +68,11 @@ int UnixStreamClientSockEP::sendMessage(const std::string &msg)
 	return sendMessage(msg.c_str(), msg.size());
 }
 
+std::string UnixStreamClientSockEP::getPeerAddress() const
+{
+	return std::string(saddr_.sun_path);
+}
+
 std::string UnixStreamClientSockEP::to_str() const
 {
 	return saddr_.sun_path;
