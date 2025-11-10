@@ -173,6 +173,22 @@ void ServerSockEP::setCallback(std::function<void(int, const char *, size_t)> ca
 	callback_ = callback;
 }
 
+void ServerSockEP::sendMessageToAll(const char *msg, size_t msgLen)
+{
+	for (int clientId : getClientIds())
+	{
+		sendMessageToClient(clientId, msg, msgLen);
+	}
+}
+
+void ServerSockEP::sendMessageToAll(const std::string &msg)
+{
+	for (int clientId : getClientIds())
+	{
+		sendMessageToClient(clientId, msg);
+	}
+}
+
 std::vector<int> ServerSockEP::getClientIds()
 {
 	std::vector<int> clientIds;

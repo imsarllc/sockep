@@ -22,6 +22,8 @@ public:
 	// msgLen) = 0;
 	virtual int sendMessageToClient(int clientId, const char *msg, size_t msgLen) = 0;
 	virtual int sendMessageToClient(int clientId, const std::string &msg) = 0;
+	virtual void sendMessageToAll(const char *msg, size_t msgLen) = 0;
+	virtual void sendMessageToAll(const std::string &msg) = 0;
 	virtual std::vector<int> getClientIds() = 0;
 	virtual std::string getClientAddress(int clientId) = 0;
 	virtual std::string to_str() = 0;
