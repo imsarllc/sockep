@@ -113,13 +113,13 @@ std::string UdpClientSockEP::to_str() const
 
 std::string UdpClientSockEP::getMessage()
 {
-	int bytesReceived = getMessage(msg_, sizeof(msg_));
+	int bytesReceived = getMessage(msg_.data(), msg_.size());
 	if (bytesReceived == -1)
 	{ // an error has occurred
 		isValid_ = false;
 		return "";
 	}
-	std::string receiveStr(msg_, bytesReceived);
+	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
 }
 
@@ -203,9 +203,9 @@ void UdpClientSockEP::handleIncomingMessage()
 {
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_in);
 	int msgLen =
-	    recvfrom(sock_, msg_, MESSAGE_MAX_LEN, MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
+	    recvfrom(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
 	if (callback_)
 	{
-		callback_(msg_, msgLen);
+		callback_(msg_.data(), msgLen);
 	}
 }

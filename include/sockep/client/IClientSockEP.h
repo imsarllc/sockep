@@ -15,9 +15,10 @@ namespace sockep
 class IClientSockEP
 {
 public:
-	virtual ~IClientSockEP(){};
+	virtual ~IClientSockEP() = default;
 
 	virtual bool isValid() = 0;
+	virtual void setBufferSize(unsigned int size) = 0;
 
 	// returns the number of bytes sent, or -1 indicates an error
 	// virtual int sendMessage(const std::array<char, SOCKEP_CLIENT_TRANSMIT_MSG_MAX_LEN> &msg, size_t msgLen);

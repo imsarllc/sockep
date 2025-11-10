@@ -76,13 +76,13 @@ std::string TcpClientSockEP::to_str() const
 
 std::string TcpClientSockEP::getMessage()
 {
-	int bytesReceived = getMessage(msg_, sizeof(msg_));
+	int bytesReceived = getMessage(msg_.data(), msg_.size());
 	if (bytesReceived == -1)
 	{ // an error has occurred
 		isValid_ = false;
 		return "";
 	}
-	std::string receiveStr(msg_, bytesReceived);
+	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
 }
 
@@ -141,9 +141,9 @@ int TcpClientSockEP::getSock() const
 
 void TcpClientSockEP::handleIncomingMessage()
 {
-	int msgLen = recv(sock_, msg_, MESSAGE_MAX_LEN, MSG_NOSIGNAL);
+	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL);
 	if (callback_)
 	{
-		callback_(msg_, msgLen);
+		callback_(msg_.data(), msgLen);
 	}
 }

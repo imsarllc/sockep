@@ -60,7 +60,7 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 			newClient->clearSaddr();
 
 			auto len = newClient->getSaddrLen();
-			int bytesReceived = recvfrom(sock_, msg_, sizeof(msg_), 0, newClient->getSaddr(), &len);
+			int bytesReceived = recvfrom(sock_, msg_.data(), msg_.size(), 0, newClient->getSaddr(), &len);
 			msg_[bytesReceived] = '\0';
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
@@ -73,7 +73,7 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 
 			if (callback_)
 			{
-				callback_(client.first, msg_, bytesReceived);
+				callback_(client.first, msg_.data(), bytesReceived);
 			}
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
@@ -98,9 +98,9 @@ std::unique_ptr<ISSClientSockEP> UnixDgramServerSockEP::createNewClient()
 
 int UnixDgramServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t msgLen)
 {
-	if (msgLen > MESSAGE_MAX_LEN)
+	if (msgLen > msg_.size())
 	{
-		simpleLogger.error << "Datagram message too long! Max Datagram length: " << MESSAGE_MAX_LEN << "\n";
+		simpleLogger.error << "Datagram message too long! Max Datagram length: " << msg_.size() << "\n";
 		return -1;
 	}
 

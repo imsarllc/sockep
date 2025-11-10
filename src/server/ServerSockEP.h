@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef MESSAGE_MAX_LEN
-#define MESSAGE_MAX_LEN 5000
+#ifndef DEFAULT_MAX_LEN
+#define DEFAULT_MAX_LEN 5000
 #endif
 
 #include "client/ISSClientSockEP.h"
@@ -34,6 +34,8 @@ public:
 	virtual ~ServerSockEP();
 
 	bool isValid() override { return isValid_; };
+	virtual void setBufferSize(unsigned int size) override;
+
 
 	virtual void startServer() override;
 	virtual void stopServer() override;
@@ -75,7 +77,7 @@ protected:
 	std::atomic<bool> serverRunning_{false};
 	int sock_ = -1;
 	bool isValid_ = false;
-	char msg_[MESSAGE_MAX_LEN];
+	std::vector<char> msg_;
 
 	// this should probably hold a unique pointer
 	std::map<int, std::unique_ptr<ISSClientSockEP>> clients_;

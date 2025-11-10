@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef MESSAGE_MAX_LEN
-#define MESSAGE_MAX_LEN 5000
+#ifndef DEFAULT_MAX_LEN
+#define DEFAULT_MAX_LEN 5000
 #endif
 
 #include "client/IClientSockEP.h"
@@ -24,10 +24,12 @@ enum class ClientSockEPType
 class ClientSockEP : public IClientSockEP
 {
 public:
-	ClientSockEP(){};
+	ClientSockEP();
 	virtual ~ClientSockEP();
 
 	bool isValid() override { return isValid_; };
+	virtual void setBufferSize(unsigned int size) override;
+
 	virtual int sendMessage(const char *msg, size_t msgLen) override = 0;
 	virtual int sendMessage(const std::string &msg) override = 0;
 	virtual std::string getMessage() override = 0;
@@ -52,7 +54,7 @@ protected:
 	ClientSockEPType sockType_;
 	bool isValid_{false};
 	int sock_ = -1;
-	char msg_[MESSAGE_MAX_LEN];
+	std::vector<char> msg_;
 };
 
 } // namespace sockep

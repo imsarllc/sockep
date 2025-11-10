@@ -8,9 +8,19 @@
 
 using namespace sockep;
 
+ClientSockEP::ClientSockEP()
+{
+	msg_.resize(DEFAULT_MAX_LEN);
+}
+
 ClientSockEP::~ClientSockEP()
 {
 	stopRecvThread();
+}
+
+void ClientSockEP::setBufferSize(unsigned int size)
+{
+	msg_.resize(size);
 }
 
 int ClientSockEP::startRecvThread(std::function<void(const char *, size_t)> callback)

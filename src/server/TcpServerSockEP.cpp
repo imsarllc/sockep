@@ -117,7 +117,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 				bool clientDisconnect = false;
 
 				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_, sizeof(msg_));
+				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
 
 				if (bytesReceived == 0)
 				{ // client disconnected
@@ -135,7 +135,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 				}
 				else if (callback_)
 				{
-					callback_(pfd.fd, msg_, bytesReceived);
+					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
 			}
 		}

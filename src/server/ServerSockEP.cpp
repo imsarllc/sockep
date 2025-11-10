@@ -10,12 +10,19 @@
 
 using namespace sockep;
 
-// ServerSockEP::ServerSockEP(void (*callback)(int, uint8_t*, size_t)) : callback_{callback}
-ServerSockEP::ServerSockEP(std::function<void(int, const char *, size_t)> callback) : callback_{callback} {}
+ServerSockEP::ServerSockEP(std::function<void(int, const char *, size_t)> callback) : callback_{callback}
+{
+	msg_.resize(DEFAULT_MAX_LEN);
+}
 
 ServerSockEP::~ServerSockEP()
 {
 	closeSocket();
+}
+
+void ServerSockEP::setBufferSize(unsigned int size)
+{
+	msg_.resize(size);
 }
 
 void ServerSockEP::closeSocket()

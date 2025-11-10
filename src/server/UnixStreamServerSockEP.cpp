@@ -104,12 +104,12 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 				simpleLogger.debug << "Got message from socket " << pfd.fd << "\n";
 
 				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_, sizeof(msg_));
+				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
 				clientsMutex_.unlock();
 
 				if (callback_)
 				{
-					callback_(pfd.fd, msg_, bytesReceived);
+					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
 			}
 		}

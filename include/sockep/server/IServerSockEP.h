@@ -18,8 +18,11 @@ public:
 		DISCONNECTED
 	};
 
-	virtual ~IServerSockEP(){};
+	virtual ~IServerSockEP() = default;
+
 	virtual bool isValid() = 0;
+	virtual void setBufferSize(unsigned int size) = 0;
+
 	virtual void startServer() = 0;
 	virtual void stopServer() = 0;
 	virtual bool serverRunning() = 0;

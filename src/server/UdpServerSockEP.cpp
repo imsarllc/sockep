@@ -48,7 +48,7 @@ UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<voi
 	// Join multicast group if given. If interfaceAddr is not given, use INADDR_ANY and the system will choose one.
 	if (multicastAddr != "")
 	{
-		if(!joinMulticastGroup(interfaceAddr, multicastAddr))
+		if (!joinMulticastGroup(interfaceAddr, multicastAddr))
 		{
 			isValid_ = false;
 		}
@@ -78,8 +78,9 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 
 			auto len = newClient->getSaddrLen();
 
-			int bytesReceived = recvfrom(sock_, msg_, sizeof(msg_), 0, newClient->getSaddr(), &len);
+			int bytesReceived = recvfrom(sock_, msg_.data(), msg_.size(), 0, newClient->getSaddr(), &len);
 			msg_[bytesReceived] = '\0';
+
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
 			std::pair<int, bool> client = addClient(std::move(newClient));
@@ -91,7 +92,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 
 			if (callback_)
 			{
-				callback_(client.first, msg_, bytesReceived);
+				callback_(client.first, msg_.data(), bytesReceived);
 			}
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
@@ -138,9 +139,9 @@ std::unique_ptr<ISSClientSockEP> UdpServerSockEP::createNewClient()
 
 int UdpServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t msgLen)
 {
-	if (msgLen > MESSAGE_MAX_LEN)
+	if (msgLen > msg_.size())
 	{
-		simpleLogger.error << "Datagram message too long! Max Datagram length: " << MESSAGE_MAX_LEN << "\n";
+		simpleLogger.error << "Datagram message too long! Max Datagram length: " << msg_.size() << "\n";
 		return -1;
 	}
 
@@ -149,6 +150,7 @@ int UdpServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t m
 		simpleLogger.error << "Cannot send message to client, UDP server is not valid" << std::endl;
 		return -1;
 	}
+
 	// maybe if clientId == -1 then send message to all clients?
 	clientsMutex_.lock();
 	auto clientIt = clients_.find(clientId);
