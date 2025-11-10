@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ServerSockEP.h"
+#include "TcpOptions.h"
 
 #include <arpa/inet.h>
 #include <functional>
@@ -12,6 +13,7 @@ class TcpServerSockEP : public ServerSockEP
 {
 public:
 	TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback = nullptr);
+	TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback, TcpOptions options);
 	~TcpServerSockEP();
 
 	int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override;
@@ -26,5 +28,6 @@ private:
 
 	struct sockaddr_in saddr_;
 	socklen_t slen_;
+	TcpOptions options_;
 };
 } // namespace sockep

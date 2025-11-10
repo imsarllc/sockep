@@ -1,6 +1,8 @@
 #include "TcpServerSockEP.h"
+
 #include "client/TcpClientSockEP.h" // so server can create new server side clients
 #include <iostream>
+#include <netinet/tcp.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 
@@ -9,7 +11,12 @@
 using namespace sockep;
 
 TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback)
-    : ServerSockEP(callback), slen_{sizeof(saddr_)}
+    : TcpServerSockEP(ipaddr, port, callback, TcpOptions())
+{
+}
+
+TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback, TcpOptions options)
+    : ServerSockEP(callback), slen_{sizeof(saddr_)}, options_{options}
 {
 	simpleLogger.debug << "Constructing TCP Server Socket...\n";
 
@@ -157,6 +164,7 @@ std::unique_ptr<ISSClientSockEP> TcpServerSockEP::createNewClient()
 		return nullptr;
 	}
 	newClient->setSock(newClientSock);
+	newClient->configureOptions(options_);
 
 	return newClient;
 }

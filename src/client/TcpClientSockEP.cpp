@@ -1,5 +1,8 @@
 #include "TcpClientSockEP.h"
 
+
+#include <netinet/tcp.h> //TCP_*
+
 #include <array>
 #include <cstring> // memset
 #include <iostream>
@@ -8,7 +11,11 @@
 
 using namespace sockep;
 
-TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port)
+TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port) : TcpClientSockEP(serverIpaddr, port, TcpOptions())
+{
+}
+
+TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port, const TcpOptions &options)
 {
 	simpleLogger.debug << "Constructing Unix Stream Client Socket...\n";
 
@@ -38,6 +45,8 @@ TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port)
 		return;
 	}
 
+	configureOptions(options);
+
 	isValid_ = true;
 }
 
@@ -49,6 +58,39 @@ TcpClientSockEP::~TcpClientSockEP()
 	simpleLogger.debug << "Destructing TcpClientSockEP\n";
 }
 
+void TcpClientSockEP::configureOptions(const TcpOptions &options)
+{
+	// Set the Keep-Alive on the socket
+	int enabled = static_cast<int>(options.keepAlive.enabled);
+	if (setsockopt(sock_, SOL_SOCKET, SO_KEEPALIVE, &enabled, sizeof(int)) < 0)
+	{
+		simpleLogger.error << "setsockopt(SO_KEEPALIVE) error\n";
+	}
+
+	if (options.keepAlive.enabled)
+	{
+		// Set the idle time
+		int idleTime = options.keepAlive.idleSeconds;
+		if (setsockopt(sock_, IPPROTO_TCP, TCP_KEEPIDLE, &idleTime, sizeof(idleTime)) < 0)
+		{
+			simpleLogger.error << "setsockopt(TCP_KEEPIDLE) error\n";
+		}
+
+		// Set the probe interval
+		int intervalSecs = options.keepAlive.intervalSeconds;
+		if (setsockopt(sock_, IPPROTO_TCP, TCP_KEEPINTVL, &intervalSecs, sizeof(intervalSecs)) < 0)
+		{
+			simpleLogger.error << "setsockopt(TCP_KEEPINTVL) error\n";
+		}
+
+		// Set the probe count
+		int keepCount = options.keepAlive.keepCount;
+		if (setsockopt(sock_, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(keepCount)) < 0)
+		{
+			simpleLogger.error << "setsockopt(TCP_KEEPCNT) error\n";
+		}
+	}
+}
 
 /******* BOTH INTERFACES **********/
 int TcpClientSockEP::sendMessage(const char *msg, size_t msgLen)

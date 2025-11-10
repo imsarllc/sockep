@@ -25,10 +25,13 @@ void messageHandler(int clientId, const char *msg, size_t msgLen)
 
 int main()
 {
+	sockep::TcpOptions options;
+	options.keepAlive.enabled = true;
+
 	running = true;
 
-	srvr =
-	    std::unique_ptr<sockep::IServerSockEP>(sockep::SockEPFactory::createTcpServerSockEP("", 5678, messageHandler));
+	srvr = std::unique_ptr<sockep::IServerSockEP>(
+	    sockep::SockEPFactory::createTcpServerSockEP("", 5678, messageHandler, options));
 
 	std::cout << "Server valid: " << (srvr->isValid() ? "true" : "false") << std::endl;
 	srvr->startServer();

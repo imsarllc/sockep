@@ -2,6 +2,7 @@
 
 #include "ClientSockEP.h"
 #include "ISSClientSockEP.h"
+#include "TcpOptions.h"
 #include <arpa/inet.h>
 #include <iostream>
 
@@ -12,6 +13,7 @@ class TcpClientSockEP : public ClientSockEP, public ISSClientSockEP
 {
 public:
 	TcpClientSockEP(std::string serverIpaddr, int port);
+	TcpClientSockEP(std::string serverIpaddr, int port, const TcpOptions &options);
 	TcpClientSockEP(); // for server side client creation
 	~TcpClientSockEP();
 
@@ -19,6 +21,7 @@ public:
 	int sendMessage(const char *msg, size_t msgLen) override;
 	int sendMessage(const std::string &msg) override;
 	std::string to_str() const override;
+	void configureOptions(const TcpOptions &options);
 
 	// for Client interface
 	std::string getMessage() override;
@@ -37,6 +40,7 @@ public:
 
 private:
 	void handleIncomingMessage() override;
+
 	struct sockaddr_in saddr_;
 	struct sockaddr_in serverSaddr_;
 };

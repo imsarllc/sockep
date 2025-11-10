@@ -50,10 +50,24 @@ std::unique_ptr<IServerSockEP> SockEPFactory::createTcpServerSockEP(std::string 
 	return std::unique_ptr<TcpServerSockEP>(new TcpServerSockEP(ipaddr, port, callback));
 }
 
+std::unique_ptr<IServerSockEP> SockEPFactory::createTcpServerSockEP(std::string ipaddr, int port,
+                                                     IServerSockEP::MessageCallback callback, const TcpOptions &options)
+{
+	simpleLogger.debug << "Factory creating Tcp Server Socket with options\n";
+	return std::unique_ptr<TcpServerSockEP>(new TcpServerSockEP(ipaddr, port, callback, options));
+}
+
 std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string serverIpaddr, int port)
 {
 	simpleLogger.debug << "Factory creating Tcp Client Socket\n";
 	return std::unique_ptr<TcpClientSockEP>(new TcpClientSockEP(serverIpaddr, port));
+}
+
+std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string serverIpaddr, int port,
+                                                                    const TcpOptions &options)
+{
+	simpleLogger.debug << "Factory creating Tcp Client Socket with options\n";
+	return std::unique_ptr<TcpClientSockEP>(new TcpClientSockEP(serverIpaddr, port, options));
 }
 
 std::unique_ptr<IServerSockEP> SockEPFactory::createUdpServerSockEP(std::string ipaddr, int port,
