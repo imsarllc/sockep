@@ -151,7 +151,7 @@ void ServerSockEP::stopServer()
 {
 	if (!serverRunning_)
 	{
-		simpleLogger.warning << "Thread is already stopped\n";
+		simpleLogger.info << "Thread is already stopped\n";
 		return;
 	}
 	close(pipeFd_[1]);
