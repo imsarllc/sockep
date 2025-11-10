@@ -30,7 +30,7 @@ enum class ServerSockEPType
 class ServerSockEP : public IServerSockEP
 {
 public:
-	ServerSockEP(std::function<void(int, const char *, size_t)> callback);
+	ServerSockEP(MessageCallback callback);
 	virtual ~ServerSockEP();
 
 	bool isValid() override { return isValid_; };
@@ -83,7 +83,7 @@ protected:
 	std::map<int, std::unique_ptr<ISSClientSockEP>> clients_;
 	std::recursive_mutex clientsMutex_;
 	std::thread serverThread_;
-	std::function<void(int, const char *, size_t)> callback_;
+	MessageCallback callback_;
 	std::map<std::string, ConnectionCallback> connectionCallbacks_;
 	int pipeFd_[2];
 };

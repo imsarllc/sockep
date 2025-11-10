@@ -8,7 +8,7 @@
 
 using namespace sockep;
 
-TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback)
+TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing TCP Server Socket...\n";

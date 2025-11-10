@@ -11,7 +11,7 @@ namespace sockep
 class UnixStreamServerSockEP : public ServerSockEP
 {
 public:
-	UnixStreamServerSockEP(std::string bindPath, std::function<void(int, const char *, size_t)> callback = nullptr);
+	UnixStreamServerSockEP(std::string bindPath, MessageCallback callback = nullptr);
 	~UnixStreamServerSockEP();
 
 	int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override;

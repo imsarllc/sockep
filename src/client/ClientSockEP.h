@@ -36,7 +36,7 @@ public:
 	virtual int getMessage(char *msg, const int msgMaxLen) override = 0;
 	virtual std::string to_str() const override = 0;
 
-	virtual int startRecvThread(std::function<void(const char *, size_t)> callback) override;
+	virtual int startRecvThread(MessageCallback callback) override;
 	virtual int stopRecvThread() override;
 	virtual bool recvThreadRunning() override;
 
@@ -48,7 +48,7 @@ protected:
 	void runThread();
 	std::thread recvThread_;
 	std::atomic<bool> threadRunning_{false};
-	std::function<void(const char *, size_t)> callback_;
+	MessageCallback callback_;
 	int pipeFd_[2];
 
 	ClientSockEPType sockType_;

@@ -23,7 +23,7 @@ void ClientSockEP::setBufferSize(unsigned int size)
 	msg_.resize(size);
 }
 
-int ClientSockEP::startRecvThread(std::function<void(const char *, size_t)> callback)
+int ClientSockEP::startRecvThread(MessageCallback callback)
 {
 	if (threadRunning_ == true)
 	{

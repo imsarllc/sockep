@@ -8,7 +8,7 @@
 
 using namespace sockep;
 
-UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback,
+UdpServerSockEP::UdpServerSockEP(std::string ipaddr, int port, MessageCallback callback,
                                  const std::string &multicastAddr, const std::string &interfaceAddr)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {

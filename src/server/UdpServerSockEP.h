@@ -11,7 +11,7 @@ namespace sockep
 class UdpServerSockEP : public ServerSockEP
 {
 public:
-	UdpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback = nullptr,
+	UdpServerSockEP(std::string ipaddr, int port, MessageCallback callback = nullptr,
 	                const std::string &multicastAddr = "", const std::string &interfaceAddr = "");
 	~UdpServerSockEP();
 

@@ -10,7 +10,7 @@
 
 using namespace sockep;
 
-ServerSockEP::ServerSockEP(std::function<void(int, const char *, size_t)> callback) : callback_{callback}
+ServerSockEP::ServerSockEP(MessageCallback callback) : callback_{callback}
 {
 	msg_.resize(DEFAULT_MAX_LEN);
 }

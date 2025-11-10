@@ -12,6 +12,8 @@ namespace sockep
 class IServerSockEP
 {
 public:
+	using MessageCallback = std::function<void(int clientId, const char *data, size_t dataLength)>;
+
 	enum ConnectionEvent
 	{
 		CONNECTED,

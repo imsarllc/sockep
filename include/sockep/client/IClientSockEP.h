@@ -15,6 +15,8 @@ namespace sockep
 class IClientSockEP
 {
 public:
+	using MessageCallback = std::function<void(const char *, size_t)>;
+
 	virtual ~IClientSockEP() = default;
 
 	virtual bool isValid() = 0;
@@ -32,7 +34,7 @@ public:
 	virtual int getMessage(char *msg, const int msgMaxLen) = 0;
 	virtual std::string to_str() const = 0;
 
-	virtual int startRecvThread(std::function<void(const char *, size_t)> callback) = 0;
+	virtual int startRecvThread(MessageCallback callback) = 0;
 	virtual int stopRecvThread() = 0;
 	virtual bool recvThreadRunning() = 0;
 };
