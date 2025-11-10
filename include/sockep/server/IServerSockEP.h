@@ -12,6 +12,12 @@ namespace sockep
 class IServerSockEP
 {
 public:
+	enum ConnectionEvent
+	{
+		CONNECTED,
+		DISCONNECTED
+	};
+
 	virtual ~IServerSockEP(){};
 	virtual bool isValid() = 0;
 	virtual void startServer() = 0;
@@ -27,5 +33,10 @@ public:
 	virtual std::vector<int> getClientIds() = 0;
 	virtual std::string getClientAddress(int clientId) = 0;
 	virtual std::string to_str() = 0;
+
+	using ConnectionCallback = std::function<void(int clientId, ConnectionEvent)>;
+	virtual void registerConnectionEventHandler(const std::string &id, ConnectionCallback cb) = 0;
+	virtual void unregisterConnectionEventHandler(const std::string &id) = 0;
+	virtual std::string getConnectionEventName(ConnectionEvent event) const = 0;
 };
 } // namespace sockep

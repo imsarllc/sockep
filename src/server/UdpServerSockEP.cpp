@@ -72,7 +72,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		simpleLogger.debug << "Fd: " << pfd.fd << " | events: " << pfd.events << " | revents : " << pfd.revents << "\n";
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
-		{ // new client connection
+		{ // incoming UDP packet
 			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
 			newClient->clearSaddr();
 
@@ -82,12 +82,16 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			msg_[bytesReceived] = '\0';
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
-			// this will always return the client id, whether it's already exists or not
-			int clientId = addClient(std::move(newClient));
+			std::pair<int, bool> client = addClient(std::move(newClient));
+
+			if (client.second) // new client
+			{
+				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED);
+			}
 
 			if (callback_)
 			{
-				callback_(clientId, msg_, bytesReceived);
+				callback_(client.first, msg_, bytesReceived);
 			}
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)

@@ -29,11 +29,11 @@ void ServerSockEP::closeSocket()
 	isValid_ = false;
 }
 
-int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
+std::pair<int, bool> ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 {
 	// find if client already exists
 	simpleLogger.debug << "Looking for client " << newClient->to_str() << "\n";
-	std::lock_guard<std::mutex> lock(clientsMutex_);
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
 
 	for (auto &client : clients_)
 	{
@@ -42,12 +42,7 @@ int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 		    *client.second == *newClient) // strcmp(client.second.sun_path, clientSaddr.sun_path) == 0)
 		{
 			// client already in list, return id.
-
-			// need to clear Saddr or the destructor of newClient will
-			// unlink the socket when it goes out of scope
-			newClient->clearSaddr();
-
-			return client.first;
+			return {client.first, false};
 		}
 	}
 
@@ -60,7 +55,7 @@ int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 	simpleLogger.debug << "Inserting client with ID " << clientId << " and address " << newClient->to_str() << "\n";
 
 	clients_.emplace(clientId, std::move(newClient));
-	return clientId;
+	return {clientId, true};
 }
 
 void ServerSockEP::startServer()
@@ -193,7 +188,7 @@ std::vector<int> ServerSockEP::getClientIds()
 {
 	std::vector<int> clientIds;
 
-	const std::lock_guard<std::mutex> lock(clientsMutex_);
+	const std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
 	for (auto &client : clients_)
 	{
 		clientIds.push_back(client.first);
@@ -204,11 +199,42 @@ std::vector<int> ServerSockEP::getClientIds()
 
 std::string ServerSockEP::getClientAddress(int clientId)
 {
-	const std::lock_guard<std::mutex> lock(clientsMutex_);
+	const std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
 	auto it = clients_.find(clientId);
 	if (it == clients_.end())
 	{
 		return "";
 	}
 	return it->second->getPeerAddress();
+}
+
+void ServerSockEP::registerConnectionEventHandler(const std::string &id, ConnectionCallback cb)
+{
+	connectionCallbacks_[id] = cb;
+}
+
+void ServerSockEP::unregisterConnectionEventHandler(const std::string &id)
+{
+	connectionCallbacks_.erase(id);
+}
+
+std::string ServerSockEP::getConnectionEventName(ConnectionEvent event) const
+{
+	switch (event)
+	{
+	case ConnectionEvent::CONNECTED:
+		return "connected";
+	case ConnectionEvent::DISCONNECTED:
+		return "disconnected";
+	default:
+		return "unknown_event";
+	};
+}
+
+void ServerSockEP::notifyConnectionEvent(int clientId, ConnectionEvent status)
+{
+	for (std::pair<const std::string &, ConnectionCallback> callback : connectionCallbacks_)
+	{
+		callback.second(clientId, status);
+	}
 }

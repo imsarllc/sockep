@@ -53,12 +53,20 @@ public:
 		return s;
 	};
 
+	virtual void registerConnectionEventHandler(const std::string &id, ConnectionCallback cb) override;
+	virtual void unregisterConnectionEventHandler(const std::string &id) override;
+	virtual std::string getConnectionEventName(ConnectionEvent event) const override;
+
 protected:
-	virtual int addClient(std::unique_ptr<ISSClientSockEP> newClient);
+	// Create (or find) a client matching the provided client (by address)
+	// Returns a pair of {int clientId, bool isNewClient}
+	virtual std::pair<int, bool> addClient(std::unique_ptr<ISSClientSockEP> newClient);
+
 	void runServer();
 	virtual void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
 	                              std::vector<struct pollfd> &removePfds) = 0;
 	virtual void closeSocket();
+	void notifyConnectionEvent(int clientId, ConnectionEvent status);
 
 	// allow concrete class to create the proper type of client
 	virtual std::unique_ptr<ISSClientSockEP> createNewClient() = 0;
@@ -71,9 +79,10 @@ protected:
 
 	// this should probably hold a unique pointer
 	std::map<int, std::unique_ptr<ISSClientSockEP>> clients_;
-	std::mutex clientsMutex_;
+	std::recursive_mutex clientsMutex_;
 	std::thread serverThread_;
 	std::function<void(int, const char *, size_t)> callback_;
+	std::map<std::string, ConnectionCallback> connectionCallbacks_;
 	int pipeFd_[2];
 };
 } // namespace sockep
