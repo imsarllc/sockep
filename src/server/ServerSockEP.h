@@ -57,7 +57,6 @@ public:
 
 	virtual void registerConnectionEventHandler(const std::string &id, ConnectionCallback cb) override;
 	virtual void unregisterConnectionEventHandler(const std::string &id) override;
-	virtual std::string getConnectionEventName(ConnectionEvent event) const override;
 
 protected:
 	// Create (or find) a client matching the provided client (by address)

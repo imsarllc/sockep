@@ -37,10 +37,10 @@ int main()
 	srvr->startServer();
 	std::cout << "Server started\n";
 
-	auto connectionEventHandler = [](int clientId, sockep::IServerSockEP::ConnectionEvent event)
+	auto connectionEventHandler = [](int clientId, sockep::ConnectionEvent event)
 	{
 		std::cout << "Client " << clientId << " (" << srvr->getClientAddress(clientId) << ") "
-		          << srvr->getConnectionEventName(event) << std::endl;
+		          << stringifyConnectionEvent(event) << std::endl;
 	};
 	srvr->registerConnectionEventHandler("main", connectionEventHandler);
 

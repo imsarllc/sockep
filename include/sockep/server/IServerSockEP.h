@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "sockep/DataTypes.h"
+
 // #define SOCKEP_SERVER_TRANSMIT_MSG_MAX_LEN 1000
 
 namespace sockep
@@ -13,12 +15,6 @@ class IServerSockEP
 {
 public:
 	using MessageCallback = std::function<void(int clientId, const char *data, size_t dataLength)>;
-
-	enum ConnectionEvent
-	{
-		CONNECTED,
-		DISCONNECTED
-	};
 
 	virtual ~IServerSockEP() = default;
 
@@ -42,6 +38,5 @@ public:
 	using ConnectionCallback = std::function<void(int clientId, ConnectionEvent)>;
 	virtual void registerConnectionEventHandler(const std::string &id, ConnectionCallback cb) = 0;
 	virtual void unregisterConnectionEventHandler(const std::string &id) = 0;
-	virtual std::string getConnectionEventName(ConnectionEvent event) const = 0;
 };
 } // namespace sockep

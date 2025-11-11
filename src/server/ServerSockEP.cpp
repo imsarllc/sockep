@@ -225,19 +225,6 @@ void ServerSockEP::unregisterConnectionEventHandler(const std::string &id)
 	connectionCallbacks_.erase(id);
 }
 
-std::string ServerSockEP::getConnectionEventName(ConnectionEvent event) const
-{
-	switch (event)
-	{
-	case ConnectionEvent::CONNECTED:
-		return "connected";
-	case ConnectionEvent::DISCONNECTED:
-		return "disconnected";
-	default:
-		return "unknown_event";
-	};
-}
-
 void ServerSockEP::notifyConnectionEvent(int clientId, ConnectionEvent status)
 {
 	for (std::pair<const std::string &, ConnectionCallback> callback : connectionCallbacks_)
