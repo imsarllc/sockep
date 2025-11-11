@@ -1,7 +1,7 @@
 #include "SimpleLogger.h"
 
 #ifndef SIMPLE_LOGGER_LEVEL
-#define SIMPLE_LOGGER_LEVEL info
+#define SIMPLE_LOGGER_LEVEL warning
 #endif
 
 #ifndef SIMPLE_LOGGER_OSTREAM
