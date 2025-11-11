@@ -67,7 +67,7 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 
 			if (client.second) // new client
 			{
-				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED);
+				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED, clients_.size());
 			}
 
 			if (callback_)

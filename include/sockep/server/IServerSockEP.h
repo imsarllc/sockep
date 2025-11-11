@@ -35,7 +35,7 @@ public:
 	virtual std::string getClientAddress(int clientId) = 0;
 	virtual std::string to_str() = 0;
 
-	using ConnectionCallback = std::function<void(int clientId, ConnectionEvent)>;
+	using ConnectionCallback = std::function<void(int clientId, ConnectionEvent event, unsigned int count)>;
 	virtual void registerConnectionEventHandler(const std::string &id, ConnectionCallback cb) = 0;
 	virtual void unregisterConnectionEventHandler(const std::string &id) = 0;
 };

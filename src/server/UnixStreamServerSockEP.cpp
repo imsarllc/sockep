@@ -77,7 +77,7 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 			clients_[newPfd.fd] = std::move(newClient);
 			clientsMutex_.unlock();
 
-			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED);
+			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clients_.size());
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -89,7 +89,8 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
-				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED); // notify before removal!
+				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
+				                      clients_.size() - 1); // notify before removal!
 
 				clientsMutex_.lock();
 				removePfds.push_back(pfd);

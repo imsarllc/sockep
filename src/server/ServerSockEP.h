@@ -67,7 +67,7 @@ protected:
 	virtual void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
 	                              std::vector<struct pollfd> &removePfds) = 0;
 	virtual void closeSocket();
-	void notifyConnectionEvent(int clientId, ConnectionEvent status);
+	void notifyConnectionEvent(int clientId, ConnectionEvent status, unsigned int count);
 
 	// allow concrete class to create the proper type of client
 	virtual std::unique_ptr<ISSClientSockEP> createNewClient() = 0;

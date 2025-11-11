@@ -191,7 +191,7 @@ void UdpClientSockEP::setTtl(int ttl)
 	{
 		simpleLogger.warning << "Failed to set IP_TTL...\n";
 	}
-	
+
 	result = setsockopt(sock_, SOL_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 	if (result != 0)
 	{

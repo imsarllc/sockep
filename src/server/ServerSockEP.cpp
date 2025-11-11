@@ -225,10 +225,10 @@ void ServerSockEP::unregisterConnectionEventHandler(const std::string &id)
 	connectionCallbacks_.erase(id);
 }
 
-void ServerSockEP::notifyConnectionEvent(int clientId, ConnectionEvent status)
+void ServerSockEP::notifyConnectionEvent(int clientId, ConnectionEvent status, unsigned int count)
 {
 	for (std::pair<const std::string &, ConnectionCallback> callback : connectionCallbacks_)
 	{
-		callback.second(clientId, status);
+		callback.second(clientId, status, count);
 	}
 }

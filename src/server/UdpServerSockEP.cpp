@@ -87,7 +87,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 
 			if (client.second) // new client
 			{
-				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED);
+				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED, clients_.size());
 			}
 
 			if (callback_)
