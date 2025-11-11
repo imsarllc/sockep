@@ -10,12 +10,19 @@
 
 using namespace sockep;
 
-// ServerSockEP::ServerSockEP(void (*callback)(int, uint8_t*, size_t)) : callback_{callback}
-ServerSockEP::ServerSockEP(std::function<void(int, const char *, size_t)> callback) : callback_{callback} {}
+ServerSockEP::ServerSockEP(MessageCallback callback) : callback_{callback}
+{
+	msg_.resize(DEFAULT_MAX_LEN);
+}
 
 ServerSockEP::~ServerSockEP()
 {
 	closeSocket();
+}
+
+void ServerSockEP::setBufferSize(unsigned int size)
+{
+	msg_.resize(size);
 }
 
 void ServerSockEP::closeSocket()
@@ -29,11 +36,11 @@ void ServerSockEP::closeSocket()
 	isValid_ = false;
 }
 
-int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
+std::pair<int, bool> ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 {
 	// find if client already exists
 	simpleLogger.debug << "Looking for client " << newClient->to_str() << "\n";
-	std::lock_guard<std::mutex> lock(clientsMutex_);
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
 
 	for (auto &client : clients_)
 	{
@@ -42,12 +49,7 @@ int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 		    *client.second == *newClient) // strcmp(client.second.sun_path, clientSaddr.sun_path) == 0)
 		{
 			// client already in list, return id.
-
-			// need to clear Saddr or the destructor of newClient will
-			// unlink the socket when it goes out of scope
-			newClient->clearSaddr();
-
-			return client.first;
+			return {client.first, false};
 		}
 	}
 
@@ -60,7 +62,7 @@ int ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
 	simpleLogger.debug << "Inserting client with ID " << clientId << " and address " << newClient->to_str() << "\n";
 
 	clients_.emplace(clientId, std::move(newClient));
-	return clientId;
+	return {clientId, true};
 }
 
 void ServerSockEP::startServer()
@@ -151,7 +153,7 @@ void ServerSockEP::stopServer()
 {
 	if (!serverRunning_)
 	{
-		simpleLogger.warning << "Thread is already stopped\n";
+		simpleLogger.info << "Thread is already stopped\n";
 		return;
 	}
 	close(pipeFd_[1]);
@@ -173,15 +175,60 @@ void ServerSockEP::setCallback(std::function<void(int, const char *, size_t)> ca
 	callback_ = callback;
 }
 
+void ServerSockEP::sendMessageToAll(const char *msg, size_t msgLen)
+{
+	for (int clientId : getClientIds())
+	{
+		sendMessageToClient(clientId, msg, msgLen);
+	}
+}
+
+void ServerSockEP::sendMessageToAll(const std::string &msg)
+{
+	for (int clientId : getClientIds())
+	{
+		sendMessageToClient(clientId, msg);
+	}
+}
+
 std::vector<int> ServerSockEP::getClientIds()
 {
 	std::vector<int> clientIds;
 
-	const std::lock_guard<std::mutex> lock(clientsMutex_);
+	const std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
 	for (auto &client : clients_)
 	{
 		clientIds.push_back(client.first);
 	}
 
 	return clientIds;
+}
+
+std::string ServerSockEP::getClientAddress(int clientId)
+{
+	const std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+	auto it = clients_.find(clientId);
+	if (it == clients_.end())
+	{
+		return "";
+	}
+	return it->second->getPeerAddress();
+}
+
+void ServerSockEP::registerConnectionEventHandler(const std::string &id, ConnectionCallback cb)
+{
+	connectionCallbacks_[id] = cb;
+}
+
+void ServerSockEP::unregisterConnectionEventHandler(const std::string &id)
+{
+	connectionCallbacks_.erase(id);
+}
+
+void ServerSockEP::notifyConnectionEvent(int clientId, ConnectionEvent status, unsigned int count)
+{
+	for (std::pair<const std::string &, ConnectionCallback> callback : connectionCallbacks_)
+	{
+		callback.second(clientId, status, count);
+	}
 }

@@ -1,6 +1,8 @@
 #include "TcpServerSockEP.h"
+
 #include "client/TcpClientSockEP.h" // so server can create new server side clients
 #include <iostream>
+#include <netinet/tcp.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 
@@ -8,8 +10,13 @@
 
 using namespace sockep;
 
-TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, std::function<void(int, const char *, size_t)> callback)
-    : ServerSockEP(callback), slen_{sizeof(saddr_)}
+TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback)
+    : TcpServerSockEP(ipaddr, port, callback, TcpOptions())
+{
+}
+
+TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback, TcpOptions options)
+    : ServerSockEP(callback), slen_{sizeof(saddr_)}, options_{options}
 {
 	simpleLogger.debug << "Constructing TCP Server Socket...\n";
 
@@ -88,6 +95,8 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			clientsMutex_.lock();
 			clients_[newPfd.fd] = std::move(newClient);
 			clientsMutex_.unlock();
+
+			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clients_.size());
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -99,6 +108,9 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
+				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
+				                      clients_.size() - 1); // notify before removal!
+
 				clientsMutex_.lock();
 				removePfds.push_back(pfd);
 				clients_.erase(pfd.fd);
@@ -113,23 +125,26 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 				bool clientDisconnect = false;
 
 				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_, sizeof(msg_));
+				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
 
 				if (bytesReceived == 0)
 				{ // client disconnected
 					clientDisconnect = true;
+					notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
+					                      clients_.size() - 1); // notify before removal!
 					removePfds.push_back(pfd);
 					clients_.erase(pfd.fd);
 				}
 				clientsMutex_.unlock();
 
 				if (clientDisconnect)
-				{ // cout is slow, use it outside the clientsMutex_ lock
+				{
+					// cout is slow, use it outside the clientsMutex_ lock
 					simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
 				}
 				else if (callback_)
 				{
-					callback_(pfd.fd, msg_, bytesReceived);
+					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
 			}
 		}
@@ -151,6 +166,7 @@ std::unique_ptr<ISSClientSockEP> TcpServerSockEP::createNewClient()
 		return nullptr;
 	}
 	newClient->setSock(newClientSock);
+	newClient->configureOptions(options_);
 
 	return newClient;
 }

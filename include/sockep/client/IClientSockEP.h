@@ -15,9 +15,12 @@ namespace sockep
 class IClientSockEP
 {
 public:
-	virtual ~IClientSockEP(){};
+	using MessageCallback = std::function<void(const char *, size_t)>;
+
+	virtual ~IClientSockEP() = default;
 
 	virtual bool isValid() = 0;
+	virtual void setBufferSize(unsigned int size) = 0;
 
 	// returns the number of bytes sent, or -1 indicates an error
 	// virtual int sendMessage(const std::array<char, SOCKEP_CLIENT_TRANSMIT_MSG_MAX_LEN> &msg, size_t msgLen);
@@ -31,7 +34,7 @@ public:
 	virtual int getMessage(char *msg, const int msgMaxLen) = 0;
 	virtual std::string to_str() const = 0;
 
-	virtual int startRecvThread(std::function<void(const char *, size_t)> callback) = 0;
+	virtual int startRecvThread(MessageCallback callback) = 0;
 	virtual int stopRecvThread() = 0;
 	virtual bool recvThreadRunning() = 0;
 };

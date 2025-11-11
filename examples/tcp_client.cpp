@@ -6,16 +6,19 @@
 
 int main(int argc, char *argv[])
 {
+	sockep::TcpOptions options;
+	options.keepAlive.enabled = true;
+
 	std::unique_ptr<sockep::IClientSockEP> client;
 	if (argc > 2)
 	{
 		client = std::unique_ptr<sockep::IClientSockEP>(
-		    sockep::SockEPFactory::createTcpClientSockEP(argv[1], strtol(argv[2], NULL, 10)));
+		    sockep::SockEPFactory::createTcpClientSockEP(argv[1], strtol(argv[2], NULL, 10), options));
 	}
 	else
 	{
-		client =
-		    std::unique_ptr<sockep::IClientSockEP>(sockep::SockEPFactory::createTcpClientSockEP("127.0.0.1", 5678));
+		client = std::unique_ptr<sockep::IClientSockEP>(
+		    sockep::SockEPFactory::createTcpClientSockEP("127.0.0.1", 5678, options));
 	}
 
 	std::cout << "Client valid: " << (client->isValid() ? "true" : "false") << std::endl;

@@ -17,9 +17,8 @@
 
 using namespace sockep;
 
-std::unique_ptr<IServerSockEP>
-SockEPFactory::createUnixDgramServerSockEP(std::string bindPath,
-                                           std::function<void(int, const char *, size_t)> callback)
+std::unique_ptr<IServerSockEP> SockEPFactory::createUnixDgramServerSockEP(std::string bindPath,
+                                                                          IServerSockEP::MessageCallback callback)
 {
 	simpleLogger.debug << "Factory creating Unix Dgram Server Socket\n";
 	return std::unique_ptr<UnixDgramServerSockEP>(new UnixDgramServerSockEP(bindPath, callback));
@@ -31,9 +30,8 @@ std::unique_ptr<IClientSockEP> SockEPFactory::createUnixDgramClientSockEP(std::s
 	return std::unique_ptr<UnixDgramClientSockEP>(new UnixDgramClientSockEP(bindPath, serverPath));
 }
 
-std::unique_ptr<IServerSockEP>
-SockEPFactory::createUnixStreamServerSockEP(std::string bindPath,
-                                            std::function<void(int, const char *, size_t)> callback)
+std::unique_ptr<IServerSockEP> SockEPFactory::createUnixStreamServerSockEP(std::string bindPath,
+                                                                           IServerSockEP::MessageCallback callback)
 {
 	simpleLogger.debug << "Factory creating Unix Stream Server Socket\n";
 	return std::unique_ptr<UnixStreamServerSockEP>(new UnixStreamServerSockEP(bindPath, callback));
@@ -45,12 +43,19 @@ std::unique_ptr<IClientSockEP> SockEPFactory::createUnixStreamClientSockEP(std::
 	return std::unique_ptr<UnixStreamClientSockEP>(new UnixStreamClientSockEP(bindPath, serverPath));
 }
 
-std::unique_ptr<IServerSockEP>
-SockEPFactory::createTcpServerSockEP(std::string ipaddr, int port,
-                                     std::function<void(int, const char *, size_t)> callback)
+std::unique_ptr<IServerSockEP> SockEPFactory::createTcpServerSockEP(std::string ipaddr, int port,
+                                                                    IServerSockEP::MessageCallback callback)
 {
 	simpleLogger.debug << "Factory creating Tcp Server Socket\n";
 	return std::unique_ptr<TcpServerSockEP>(new TcpServerSockEP(ipaddr, port, callback));
+}
+
+std::unique_ptr<IServerSockEP> SockEPFactory::createTcpServerSockEP(std::string ipaddr, int port,
+                                                                    IServerSockEP::MessageCallback callback,
+                                                                    const TcpOptions &options)
+{
+	simpleLogger.debug << "Factory creating Tcp Server Socket with options\n";
+	return std::unique_ptr<TcpServerSockEP>(new TcpServerSockEP(ipaddr, port, callback, options));
 }
 
 std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string serverIpaddr, int port)
@@ -59,10 +64,17 @@ std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string 
 	return std::unique_ptr<TcpClientSockEP>(new TcpClientSockEP(serverIpaddr, port));
 }
 
-std::unique_ptr<IServerSockEP>
-SockEPFactory::createUdpServerSockEP(std::string ipaddr, int port,
-                                     std::function<void(int, const char *, size_t)> callback,
-                                     const std::string &multicastAddr, const std::string &interfaceAddr)
+std::unique_ptr<IClientSockEP> SockEPFactory::createTcpClientSockEP(std::string serverIpaddr, int port,
+                                                                    const TcpOptions &options)
+{
+	simpleLogger.debug << "Factory creating Tcp Client Socket with options\n";
+	return std::unique_ptr<TcpClientSockEP>(new TcpClientSockEP(serverIpaddr, port, options));
+}
+
+std::unique_ptr<IServerSockEP> SockEPFactory::createUdpServerSockEP(std::string ipaddr, int port,
+                                                                    IServerSockEP::MessageCallback callback,
+                                                                    const std::string &multicastAddr,
+                                                                    const std::string &interfaceAddr)
 {
 	simpleLogger.debug << "Factory creating Udp Server Socket\n";
 	return std::unique_ptr<UdpServerSockEP>(new UdpServerSockEP(ipaddr, port, callback, multicastAddr, interfaceAddr));

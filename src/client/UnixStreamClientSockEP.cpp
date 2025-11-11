@@ -68,6 +68,11 @@ int UnixStreamClientSockEP::sendMessage(const std::string &msg)
 	return sendMessage(msg.c_str(), msg.size());
 }
 
+std::string UnixStreamClientSockEP::getPeerAddress() const
+{
+	return std::string(saddr_.sun_path);
+}
+
 std::string UnixStreamClientSockEP::to_str() const
 {
 	return saddr_.sun_path;
@@ -75,8 +80,8 @@ std::string UnixStreamClientSockEP::to_str() const
 
 std::string UnixStreamClientSockEP::getMessage()
 {
-	int bytesReceived = getMessage(msg_, sizeof(msg_));
-	std::string receiveStr(msg_, bytesReceived);
+	int bytesReceived = getMessage(msg_.data(), msg_.size());
+	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
 }
 
@@ -135,9 +140,9 @@ int UnixStreamClientSockEP::getSock() const
 
 void UnixStreamClientSockEP::handleIncomingMessage()
 {
-	int msgLen = recv(sock_, msg_, MESSAGE_MAX_LEN, MSG_NOSIGNAL);
+	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL);
 	if (callback_)
 	{
-		callback_(msg_, msgLen);
+		callback_(msg_.data(), msgLen);
 	}
 }

@@ -8,8 +8,7 @@
 
 using namespace sockep;
 
-UnixStreamServerSockEP::UnixStreamServerSockEP(std::string bindPath,
-                                               std::function<void(int, const char *, size_t)> callback)
+UnixStreamServerSockEP::UnixStreamServerSockEP(std::string bindPath, MessageCallback callback)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing Unix Stream Server Socket...\n";
@@ -77,6 +76,8 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 			clientsMutex_.lock();
 			clients_[newPfd.fd] = std::move(newClient);
 			clientsMutex_.unlock();
+
+			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clients_.size());
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -88,6 +89,9 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
+				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
+				                      clients_.size() - 1); // notify before removal!
+
 				clientsMutex_.lock();
 				removePfds.push_back(pfd);
 				clients_.erase(pfd.fd);
@@ -100,12 +104,12 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 				simpleLogger.debug << "Got message from socket " << pfd.fd << "\n";
 
 				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_, sizeof(msg_));
+				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
 				clientsMutex_.unlock();
 
 				if (callback_)
 				{
-					callback_(pfd.fd, msg_, bytesReceived);
+					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
 			}
 		}

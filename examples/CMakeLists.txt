@@ -1,57 +1,28 @@
 cmake_minimum_required(VERSION 3.13)
 
-add_executable(unixdgram_server EXCLUDE_FROM_ALL)
-add_executable(unixdgram_client EXCLUDE_FROM_ALL)
-add_executable(unixstream_server EXCLUDE_FROM_ALL)
-add_executable(unixstream_client EXCLUDE_FROM_ALL)
-add_executable(tcp_server EXCLUDE_FROM_ALL)
-add_executable(tcp_client EXCLUDE_FROM_ALL)
-add_executable(udp_server EXCLUDE_FROM_ALL)
-add_executable(udp_client EXCLUDE_FROM_ALL)
+add_custom_target(examples)
 
-add_custom_target(examples
-  DEPENDS unixdgram_server unixdgram_client unixstream_server unixstream_client tcp_server tcp_client udp_server udp_client
+function(add_example)
+  set(TGT_NAME ${ARGV0})
+  set(SRC_FILE ${ARGV1})
+
+  add_executable(${TGT_NAME} EXCLUDE_FROM_ALL ${SRC_FILE})
+
+  set_target_properties(${TGT_NAME} PROPERTIES
+    OUTPUT_NAME ${TGT_NAME}
   )
 
+  target_link_libraries(${TGT_NAME} PRIVATE ${SOCKEP})
 
-target_link_libraries(unixdgram_server PRIVATE ${SOCKEP})
-target_link_libraries(unixdgram_client PRIVATE ${SOCKEP})
-target_link_libraries(unixstream_server PRIVATE ${SOCKEP})
-target_link_libraries(unixstream_client PRIVATE ${SOCKEP})
-target_link_libraries(tcp_server PRIVATE ${SOCKEP})
-target_link_libraries(tcp_client PRIVATE ${SOCKEP})
-target_link_libraries(udp_server PRIVATE ${SOCKEP})
-target_link_libraries(udp_client PRIVATE ${SOCKEP})
+  add_dependencies(examples ${TGT_NAME})
+endfunction()
 
 
-target_sources(unixdgram_server PRIVATE
-unixdgram_server.cpp
-)
-
-target_sources(unixdgram_client PRIVATE
-unixdgram_client.cpp
-)
-
-target_sources(unixstream_server PRIVATE
-unixstream_server.cpp
-)
-
-target_sources(unixstream_client PRIVATE
-unixstream_client.cpp
-)
-
-target_sources(tcp_server PRIVATE
-  tcp_server.cpp
-  )
-
-target_sources(tcp_client PRIVATE
-  tcp_client.cpp
-  )
-
-target_sources(udp_server PRIVATE
-  udp_server.cpp
-  )
-
-target_sources(udp_client PRIVATE
-  udp_client.cpp
-  )
+add_example(unixdgram_server unixdgram_server.cpp)
+add_example(unixdgram_client unixdgram_client.cpp)
+add_example(unixstream_server unixstream_server.cpp)
+add_example(unixstream_client unixstream_client.cpp)
+add_example(tcp_server tcp_server.cpp)
+add_example(tcp_client tcp_client.cpp)
+add_example(udp_server udp_server.cpp)
+add_example(udp_client udp_client.cpp)

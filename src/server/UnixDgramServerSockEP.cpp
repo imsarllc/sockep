@@ -8,8 +8,7 @@
 
 using namespace sockep;
 
-UnixDgramServerSockEP::UnixDgramServerSockEP(std::string bindPath,
-                                             std::function<void(int, const char *, size_t)> callback)
+UnixDgramServerSockEP::UnixDgramServerSockEP(std::string bindPath, MessageCallback callback)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing Unix Datagram Server Socket...\n";
@@ -54,21 +53,26 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 		simpleLogger.debug << "Fd: " << pfd.fd << " | events: " << pfd.events << " | revents : " << pfd.revents << "\n";
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
-		{ // new client connection
+		{ // new datagram
 			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
 			simpleLogger.debug << "Got new client\n";
 			newClient->clearSaddr();
 
 			auto len = newClient->getSaddrLen();
-			int bytesReceived = recvfrom(sock_, msg_, sizeof(msg_), 0, newClient->getSaddr(), &len);
+			int bytesReceived = recvfrom(sock_, msg_.data(), msg_.size(), 0, newClient->getSaddr(), &len);
 			msg_[bytesReceived] = '\0';
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
-			// this will always return the client id, whether it's already exists or not
-			int clientId = addClient(std::move(newClient));
+			std::pair<int, bool> client = addClient(std::move(newClient));
+
+			if (client.second) // new client
+			{
+				notifyConnectionEvent(client.first, ConnectionEvent::CONNECTED, clients_.size());
+			}
+
 			if (callback_)
 			{
-				callback_(clientId, msg_, bytesReceived);
+				callback_(client.first, msg_.data(), bytesReceived);
 			}
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
@@ -93,9 +97,9 @@ std::unique_ptr<ISSClientSockEP> UnixDgramServerSockEP::createNewClient()
 
 int UnixDgramServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t msgLen)
 {
-	if (msgLen > MESSAGE_MAX_LEN)
+	if (msgLen > msg_.size())
 	{
-		simpleLogger.error << "Datagram message too long! Max Datagram length: " << MESSAGE_MAX_LEN << "\n";
+		simpleLogger.error << "Datagram message too long! Max Datagram length: " << msg_.size() << "\n";
 		return -1;
 	}
 

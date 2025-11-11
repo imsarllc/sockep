@@ -5,6 +5,7 @@ target_include_directories(${SOCKEP}
   )
 
 target_sources(${SOCKEP} PRIVATE
+  DataTypes.cpp
   SockEPFactory.cpp
   server/ServerSockEP.cpp
   server/UnixDgramServerSockEP.cpp

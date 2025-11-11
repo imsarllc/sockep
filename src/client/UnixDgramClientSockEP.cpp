@@ -55,9 +55,9 @@ UnixDgramClientSockEP::~UnixDgramClientSockEP()
 /******* BOTH INTERFACES **********/
 int UnixDgramClientSockEP::sendMessage(const char *msg, size_t msgLen)
 {
-	if (msgLen > MESSAGE_MAX_LEN)
+	if (msgLen > msg_.size())
 	{
-		simpleLogger.error << "Datagram message too long! Max Datagram length: " << MESSAGE_MAX_LEN << "\n";
+		simpleLogger.error << "Datagram message too long! Max Datagram length: " << msg_.size() << "\n";
 		return -1;
 	}
 	return sendto(sock_, msg, msgLen, 0, (struct sockaddr *)&serverSaddr_, sizeof(serverSaddr_));
@@ -66,6 +66,11 @@ int UnixDgramClientSockEP::sendMessage(const char *msg, size_t msgLen)
 int UnixDgramClientSockEP::sendMessage(const std::string &msg)
 {
 	return sendMessage(msg.c_str(), msg.size());
+}
+
+std::string UnixDgramClientSockEP::getPeerAddress() const
+{
+	return std::string(saddr_.sun_path);
 }
 
 std::string UnixDgramClientSockEP::to_str() const
@@ -77,9 +82,8 @@ std::string UnixDgramClientSockEP::to_str() const
 std::string UnixDgramClientSockEP::getMessage()
 {
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_un);
-
-	recvfrom(sock_, msg_, sizeof(msg_), 0, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
-	return msg_;
+	int status = recvfrom(sock_, msg_.data(), msg_.size(), 0, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
+	return std::string(msg_.data(), status);
 }
 
 int UnixDgramClientSockEP::getMessage(char *msg, const int msgMaxLen)
@@ -89,7 +93,6 @@ int UnixDgramClientSockEP::getMessage(char *msg, const int msgMaxLen)
 		return -1;
 	}
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_un);
-
 	return recvfrom(sock_, msg, msgMaxLen, 0, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
 }
 
@@ -131,9 +134,9 @@ void UnixDgramClientSockEP::handleIncomingMessage()
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_un);
 
 	int msgLen =
-	    recvfrom(sock_, msg_, MESSAGE_MAX_LEN, MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
+	    recvfrom(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
 	if (callback_)
 	{
-		callback_(msg_, msgLen);
+		callback_(msg_.data(), msgLen);
 	}
 }

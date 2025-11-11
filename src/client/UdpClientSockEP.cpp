@@ -1,5 +1,6 @@
 #include "UdpClientSockEP.h"
 
+#include <array>
 #include <cstring> // memset
 #include <iostream>
 
@@ -98,6 +99,13 @@ int UdpClientSockEP::sendMessage(const std::string &msg)
 	return sendMessage(msg.c_str(), msg.size());
 }
 
+std::string UdpClientSockEP::getPeerAddress() const
+{
+	std::array<char, INET_ADDRSTRLEN> buffer;
+	inet_ntop(AF_INET, &saddr_.sin_addr, buffer.data(), buffer.size());
+	return std::string(buffer.data());
+}
+
 std::string UdpClientSockEP::to_str() const
 {
 	return "UdpClientSock";
@@ -105,13 +113,13 @@ std::string UdpClientSockEP::to_str() const
 
 std::string UdpClientSockEP::getMessage()
 {
-	int bytesReceived = getMessage(msg_, sizeof(msg_));
+	int bytesReceived = getMessage(msg_.data(), msg_.size());
 	if (bytesReceived == -1)
 	{ // an error has occurred
 		isValid_ = false;
 		return "";
 	}
-	std::string receiveStr(msg_, bytesReceived);
+	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
 }
 
@@ -183,7 +191,7 @@ void UdpClientSockEP::setTtl(int ttl)
 	{
 		simpleLogger.warning << "Failed to set IP_TTL...\n";
 	}
-	
+
 	result = setsockopt(sock_, SOL_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 	if (result != 0)
 	{
@@ -195,9 +203,9 @@ void UdpClientSockEP::handleIncomingMessage()
 {
 	socklen_t serverSaddrLen = sizeof(struct sockaddr_in);
 	int msgLen =
-	    recvfrom(sock_, msg_, MESSAGE_MAX_LEN, MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
+	    recvfrom(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL, (struct sockaddr *)&serverSaddr_, &serverSaddrLen);
 	if (callback_)
 	{
-		callback_(msg_, msgLen);
+		callback_(msg_.data(), msgLen);
 	}
 }

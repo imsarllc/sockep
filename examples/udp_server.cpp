@@ -11,7 +11,8 @@ std::unique_ptr<sockep::IServerSockEP> srvr;
 void messageHandler(int clientId, const char *msg, size_t msgLen)
 {
 	std::string message(msg, msgLen);
-	std::cout << "Got message from client " << clientId << ": " << message << std::endl;
+	std::cout << "Got message from client " << clientId << " (" << srvr->getClientAddress(clientId) << "): " << message
+	          << std::endl;
 	if (message == "quit")
 	{
 		running = false;
@@ -40,6 +41,13 @@ int main(int argc, char *argv[])
 	std::cout << "Server valid: " << (srvr->isValid() ? "true" : "false") << std::endl;
 	srvr->startServer();
 	std::cout << "Server started\n";
+
+	auto connectionEventHandler = [](int clientId, sockep::ConnectionEvent event, unsigned int count)
+	{
+		std::cout << "Client " << clientId << " (" << srvr->getClientAddress(clientId) << ") "
+		          << stringifyConnectionEvent(event) << " (" << count << " active clients)" << std::endl;
+	};
+	srvr->registerConnectionEventHandler("main", connectionEventHandler);
 
 	while (running)
 	{

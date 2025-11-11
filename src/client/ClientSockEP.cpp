@@ -8,12 +8,22 @@
 
 using namespace sockep;
 
+ClientSockEP::ClientSockEP()
+{
+	msg_.resize(DEFAULT_MAX_LEN);
+}
+
 ClientSockEP::~ClientSockEP()
 {
 	stopRecvThread();
 }
 
-int ClientSockEP::startRecvThread(std::function<void(const char *, size_t)> callback)
+void ClientSockEP::setBufferSize(unsigned int size)
+{
+	msg_.resize(size);
+}
+
+int ClientSockEP::startRecvThread(MessageCallback callback)
 {
 	if (threadRunning_ == true)
 	{
