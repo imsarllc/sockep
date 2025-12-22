@@ -51,8 +51,6 @@ void ClientSockEP::runThread()
 		return;
 	}
 
-	fd_set rfds;
-
 	// create the 2 pollfds needed (socket and pipe)
 	std::array<struct pollfd, 2> pfds;
 
