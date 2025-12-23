@@ -87,9 +87,6 @@ void ServerSockEP::runServer()
 		return;
 	}
 
-	// std::cout << "Successfully started server thread" << std::endl;
-	fd_set rfds;
-
 	// create the pollfds
 	std::vector<struct pollfd> pfds;
 	std::vector<struct pollfd> newPfds;
@@ -110,8 +107,6 @@ void ServerSockEP::runServer()
 
 	while (serverRunning_)
 	{
-		// std::cout << "server tick" << std::endl;
-
 		// -1 == no timeout
 		int pollStatus = poll(pfds.data(), pfds.size(), -1);
 		if (pollStatus == -1)

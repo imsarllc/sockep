@@ -34,9 +34,9 @@ public:
 			return *this;
 		}
 
-		OstreamWrapper &operator<<(ostreamManipulator om) { return operator<<<ostreamManipulator>(om); }
-		OstreamWrapper &operator<<(basicIosManipulator bim) { return operator<<<basicIosManipulator>(bim); }
-		OstreamWrapper &operator<<(iosBaseManipulator ibm) { return operator<<<iosBaseManipulator>(ibm); }
+		OstreamWrapper &operator<<(ostreamManipulator om) { return operator<< <ostreamManipulator>(om); }
+		OstreamWrapper &operator<<(basicIosManipulator bim) { return operator<< <basicIosManipulator>(bim); }
+		OstreamWrapper &operator<<(iosBaseManipulator ibm) { return operator<< <iosBaseManipulator>(ibm); }
 
 	private:
 		SimpleLogger &logger_;
@@ -54,9 +54,9 @@ public:
 		return *this;
 	}
 
-	SimpleLogger &operator<<(ostreamManipulator om) { return operator<<<ostreamManipulator>(om); }
-	SimpleLogger &operator<<(basicIosManipulator bim) { return operator<<<basicIosManipulator>(bim); }
-	SimpleLogger &operator<<(iosBaseManipulator ibm) { return operator<<<iosBaseManipulator>(ibm); }
+	SimpleLogger &operator<<(ostreamManipulator om) { return operator<< <ostreamManipulator>(om); }
+	SimpleLogger &operator<<(basicIosManipulator bim) { return operator<< <basicIosManipulator>(bim); }
+	SimpleLogger &operator<<(iosBaseManipulator ibm) { return operator<< <iosBaseManipulator>(ibm); }
 
 	Level getLevel() { return level_; }
 
@@ -79,5 +79,3 @@ private:
 };
 
 #define simpleLogger SimpleLogger::get()
-// #define SETUP_SIMPLE_LOGGER(simpleLoggerName)                                                                          \
-// 	static SimpleLogger simpleLoggerName(&std::cout, SimpleLogger::Level::SIMPLE_LOGGER_LEVEL)
