@@ -8,11 +8,9 @@
 #define SIMPLE_LOGGER_OSTREAM std::cout
 #endif
 
-static std::unique_ptr<SimpleLogger> s_simpleLogger;
-
-
 SimpleLogger &SimpleLogger::get()
 {
+	static std::unique_ptr<SimpleLogger> s_simpleLogger;
 	if (!s_simpleLogger)
 	{
 		s_simpleLogger =
