@@ -8,13 +8,9 @@
 #define SIMPLE_LOGGER_OSTREAM std::cout
 #endif
 
-SimpleLogger &SimpleLogger::get()
+std::shared_ptr<SimpleLogger> SimpleLogger::instancePtr()
 {
-	static std::unique_ptr<SimpleLogger> s_simpleLogger;
-	if (!s_simpleLogger)
-	{
-		s_simpleLogger =
-		    std::unique_ptr<SimpleLogger>(new SimpleLogger(&SIMPLE_LOGGER_OSTREAM, Level::SIMPLE_LOGGER_LEVEL));
-	}
-	return *s_simpleLogger;
+	static std::shared_ptr<SimpleLogger> instance =
+	    std::shared_ptr<SimpleLogger>(new SimpleLogger(&SIMPLE_LOGGER_OSTREAM, Level::SIMPLE_LOGGER_LEVEL));
+	return instance;
 }
