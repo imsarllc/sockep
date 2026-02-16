@@ -44,7 +44,8 @@ public:
 	};
 
 	// Singleton accessor
-	static SimpleLogger &get();
+	static std::shared_ptr<SimpleLogger> instancePtr();
+	inline static SimpleLogger &instance() { return *instancePtr(); }
 
 	template <typename T>
 	SimpleLogger &operator<<(const T &x)
@@ -73,9 +74,11 @@ private:
 	{
 	}
 
-
 	std::ostream *stream_{nullptr};
 	Level level_{Level::warning};
 };
 
-#define simpleLogger SimpleLogger::get()
+// create a local copy of the shared_ptr in each Compilation Unit (.cpp file)
+static std::shared_ptr<SimpleLogger> localLogger = SimpleLogger::instancePtr();
+
+#define simpleLogger SimpleLogger::instance()
