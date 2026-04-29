@@ -10,12 +10,12 @@
 
 using namespace sockep;
 
-TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback)
+TcpServerSockEP::TcpServerSockEP(const std::string &ipaddr, int port, MessageCallback callback)
     : TcpServerSockEP(ipaddr, port, callback, TcpOptions())
 {
 }
 
-TcpServerSockEP::TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback, TcpOptions options)
+TcpServerSockEP::TcpServerSockEP(const std::string &ipaddr, int port, MessageCallback callback, TcpOptions options)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}, options_{options}
 {
 	simpleLogger.debug << "Constructing TCP Server Socket...\n";

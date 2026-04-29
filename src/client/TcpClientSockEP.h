@@ -12,8 +12,8 @@ namespace sockep
 class TcpClientSockEP : public ClientSockEP, public ISSClientSockEP
 {
 public:
-	TcpClientSockEP(std::string serverIpaddr, int port);
-	TcpClientSockEP(std::string serverIpaddr, int port, const TcpOptions &options);
+	TcpClientSockEP(const std::string &serverIpaddr, int port);
+	TcpClientSockEP(const std::string &serverIpaddr, int port, const TcpOptions &options);
 	TcpClientSockEP(); // for server side client creation
 	~TcpClientSockEP();
 

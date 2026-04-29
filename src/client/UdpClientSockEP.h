@@ -11,7 +11,7 @@ namespace sockep
 class UdpClientSockEP : public ClientSockEP, public ISSClientSockEP
 {
 public:
-	UdpClientSockEP(std::string serverIpaddr, int port);
+	UdpClientSockEP(const std::string &serverIpaddr, int port);
 	UdpClientSockEP(); // for server side client creation
 	~UdpClientSockEP();
 

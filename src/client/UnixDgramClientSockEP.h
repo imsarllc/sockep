@@ -11,7 +11,7 @@ namespace sockep
 class UnixDgramClientSockEP : public ClientSockEP, public ISSClientSockEP
 {
 public:
-	UnixDgramClientSockEP(std::string bindPath, std::string serverPath);
+	UnixDgramClientSockEP(const std::string &bindPath, const std::string &serverPath);
 	UnixDgramClientSockEP(); // for server side client creation
 
 	~UnixDgramClientSockEP();

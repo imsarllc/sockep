@@ -11,7 +11,7 @@ namespace sockep
 class UnixStreamClientSockEP : public ClientSockEP, public ISSClientSockEP
 {
 public:
-	UnixStreamClientSockEP(std::string bindPath, std::string serverPath);
+	UnixStreamClientSockEP(const std::string &bindPath, const std::string &serverPath);
 	UnixStreamClientSockEP(); // for server side client creation
 	~UnixStreamClientSockEP();
 
