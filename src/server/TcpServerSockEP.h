@@ -12,8 +12,8 @@ namespace sockep
 class TcpServerSockEP : public ServerSockEP
 {
 public:
-	TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback = nullptr);
-	TcpServerSockEP(std::string ipaddr, int port, MessageCallback callback, TcpOptions options);
+	TcpServerSockEP(const std::string &ipaddr, int port, MessageCallback callback = nullptr);
+	TcpServerSockEP(const std::string &ipaddr, int port, MessageCallback callback, TcpOptions options);
 	~TcpServerSockEP();
 
 	int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override;

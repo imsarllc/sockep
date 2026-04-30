@@ -6,7 +6,7 @@
 
 using namespace sockep;
 
-UnixStreamClientSockEP::UnixStreamClientSockEP(std::string bindPath, std::string serverPath)
+UnixStreamClientSockEP::UnixStreamClientSockEP(const std::string &bindPath, const std::string &serverPath)
 {
 	simpleLogger.debug << "Constructing Unix Stream Client Socket...\n";
 

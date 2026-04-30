@@ -7,7 +7,7 @@
 
 using namespace sockep;
 
-UnixDgramClientSockEP::UnixDgramClientSockEP(std::string bindPath, std::string serverPath)
+UnixDgramClientSockEP::UnixDgramClientSockEP(const std::string &bindPath, const std::string &serverPath)
 {
 	simpleLogger.debug << "Constructing Unix Datagram Client Socket...\n";
 

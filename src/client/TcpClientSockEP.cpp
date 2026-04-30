@@ -11,11 +11,12 @@
 
 using namespace sockep;
 
-TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port) : TcpClientSockEP(serverIpaddr, port, TcpOptions())
+TcpClientSockEP::TcpClientSockEP(const std::string &serverIpaddr, int port)
+    : TcpClientSockEP(serverIpaddr, port, TcpOptions())
 {
 }
 
-TcpClientSockEP::TcpClientSockEP(std::string serverIpaddr, int port, const TcpOptions &options)
+TcpClientSockEP::TcpClientSockEP(const std::string &serverIpaddr, int port, const TcpOptions &options)
 {
 	simpleLogger.debug << "Constructing Unix Stream Client Socket...\n";
 

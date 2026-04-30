@@ -8,7 +8,7 @@
 
 using namespace sockep;
 
-UdpClientSockEP::UdpClientSockEP(std::string serverIpaddr, int port)
+UdpClientSockEP::UdpClientSockEP(const std::string &serverIpaddr, int port)
 {
 	simpleLogger.debug << "Constructing Unix Stream Client Socket...\n";
 

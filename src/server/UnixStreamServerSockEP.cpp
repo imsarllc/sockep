@@ -8,7 +8,7 @@
 
 using namespace sockep;
 
-UnixStreamServerSockEP::UnixStreamServerSockEP(std::string bindPath, MessageCallback callback)
+UnixStreamServerSockEP::UnixStreamServerSockEP(const std::string &bindPath, MessageCallback callback)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing Unix Stream Server Socket...\n";

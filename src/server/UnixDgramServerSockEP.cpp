@@ -8,7 +8,7 @@
 
 using namespace sockep;
 
-UnixDgramServerSockEP::UnixDgramServerSockEP(std::string bindPath, MessageCallback callback)
+UnixDgramServerSockEP::UnixDgramServerSockEP(const std::string &bindPath, MessageCallback callback)
     : ServerSockEP(callback), slen_{sizeof(saddr_)}
 {
 	simpleLogger.debug << "Constructing Unix Datagram Server Socket...\n";

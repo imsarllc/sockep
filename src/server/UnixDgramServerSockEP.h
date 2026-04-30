@@ -11,7 +11,7 @@ namespace sockep
 class UnixDgramServerSockEP : public ServerSockEP
 {
 public:
-	UnixDgramServerSockEP(std::string bindPath, MessageCallback callback = nullptr);
+	UnixDgramServerSockEP(const std::string &bindPath, MessageCallback callback = nullptr);
 	~UnixDgramServerSockEP();
 
 	int sendMessageToClient(int clientId, const char *msg, size_t msgLen) override;
