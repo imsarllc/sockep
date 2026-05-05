@@ -81,4 +81,5 @@ private:
 // create a local copy of the shared_ptr in each Compilation Unit (.cpp file)
 static std::shared_ptr<SimpleLogger> localLogger = SimpleLogger::instancePtr();
 
-#define simpleLogger SimpleLogger::instance()
+// use the local copy to guarantee access to the SimpleLogger pointed to.
+#define simpleLogger (*localLogger)
