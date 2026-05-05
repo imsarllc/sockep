@@ -78,8 +78,12 @@ private:
 	Level level_{Level::warning};
 };
 
-// create a local copy of the shared_ptr in each Compilation Unit (.cpp file)
-static std::shared_ptr<SimpleLogger> localLogger = SimpleLogger::instancePtr();
+// create a local static copy of the shared_ptr in each Compilation Unit (.cpp file)
+inline SimpleLogger &getLocalLogger()
+{
+	static std::shared_ptr<SimpleLogger> localLogger = SimpleLogger::instancePtr();
+	return *localLogger;
+}
 
 // use the local copy to guarantee access to the SimpleLogger pointed to.
-#define simpleLogger (*localLogger)
+#define simpleLogger getLocalLogger()
