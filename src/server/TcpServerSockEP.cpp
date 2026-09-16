@@ -81,7 +81,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			std::shared_ptr<ISSClientSockEP> newClient = createNewClient();
 			if (newClient == nullptr)
 			{ // something went wrong with the creation of the client
-				std::cerr << "Could not create new client\n";
+				simpleLogger.error << "Could not create new client\n";
 				continue;
 			}
 
@@ -126,7 +126,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 					clients_.erase(pfd.fd);
 				}
 
-				std::cout << "Client " << pfd.fd << " disconnected.\n";
+				simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
 			}
 			else if (pfd.revents & POLLIN)
 			{ // data to read

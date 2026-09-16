@@ -26,7 +26,7 @@ TcpClientSockEP::TcpClientSockEP(const std::string &serverIpaddr, int port, cons
 	serverSaddr_.sin_addr.s_addr = inet_addr(serverIpaddr.c_str());
 	if (serverSaddr_.sin_addr.s_addr == (unsigned long)INADDR_NONE)
 	{
-		std::cerr << "Bad server ip address: " << serverIpaddr << "\n";
+		simpleLogger.error << "Bad server ip address: " << serverIpaddr << "\n";
 		return;
 	}
 
