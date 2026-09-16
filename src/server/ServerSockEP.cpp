@@ -36,7 +36,7 @@ void ServerSockEP::closeSocket()
 	isValid_ = false;
 }
 
-std::pair<int, bool> ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> newClient)
+std::pair<int, bool> ServerSockEP::addClient(std::shared_ptr<ISSClientSockEP> newClient)
 {
 	// find if client already exists
 	simpleLogger.debug << "Looking for client " << newClient->to_str() << "\n";
@@ -61,7 +61,7 @@ std::pair<int, bool> ServerSockEP::addClient(std::unique_ptr<ISSClientSockEP> ne
 	}
 	simpleLogger.debug << "Inserting client with ID " << clientId << " and address " << newClient->to_str() << "\n";
 
-	clients_.emplace(clientId, std::move(newClient));
+	clients_.emplace(clientId, newClient);
 	return {clientId, true};
 }
 

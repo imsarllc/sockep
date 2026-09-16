@@ -61,7 +61,7 @@ public:
 protected:
 	// Create (or find) a client matching the provided client (by address)
 	// Returns a pair of {int clientId, bool isNewClient}
-	virtual std::pair<int, bool> addClient(std::unique_ptr<ISSClientSockEP> newClient);
+	virtual std::pair<int, bool> addClient(std::shared_ptr<ISSClientSockEP> newClient);
 
 	void runServer();
 	virtual void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
@@ -70,7 +70,7 @@ protected:
 	void notifyConnectionEvent(int clientId, ConnectionEvent status, unsigned int count);
 
 	// allow concrete class to create the proper type of client
-	virtual std::unique_ptr<ISSClientSockEP> createNewClient() = 0;
+	virtual std::shared_ptr<ISSClientSockEP> createNewClient() = 0;
 
 	ServerSockEPType sockType_;
 	std::atomic<bool> serverRunning_{false};
@@ -78,8 +78,7 @@ protected:
 	bool isValid_ = false;
 	std::vector<char> msg_;
 
-	// this should probably hold a unique pointer
-	std::map<int, std::unique_ptr<ISSClientSockEP>> clients_;
+	std::map<int, std::shared_ptr<ISSClientSockEP>> clients_;
 	std::recursive_mutex clientsMutex_;
 	std::thread serverThread_;
 	MessageCallback callback_;

@@ -59,7 +59,7 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
 		{ // new client connection
-			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
+			std::shared_ptr<ISSClientSockEP> newClient = createNewClient();
 			if (newClient == nullptr)
 			{ // something went wrong with the creation of the client
 				simpleLogger.error << "Could not create new client\n";
@@ -73,11 +73,14 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 			newPfd.events = POLLIN;
 			newPfds.push_back(newPfd);
 
-			clientsMutex_.lock();
-			clients_[newPfd.fd] = std::move(newClient);
-			clientsMutex_.unlock();
+			size_t clientCount;
+			{
+				std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+				clients_[newPfd.fd] = newClient;
+				clientCount = clients_.size();
+			}
 
-			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clients_.size());
+			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clientCount);
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -89,13 +92,20 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
-				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
-				                      clients_.size() - 1); // notify before removal!
+				size_t clientCount;
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					clientCount = clients_.size() - 1;
+				}
 
-				clientsMutex_.lock();
-				removePfds.push_back(pfd);
-				clients_.erase(pfd.fd);
-				clientsMutex_.unlock();
+				// Notify before removal - callbacks may need to access the client
+				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
+
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					removePfds.push_back(pfd);
+					clients_.erase(pfd.fd);
+				}
 
 				simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
 			}
@@ -103,11 +113,23 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 			{ // data to read
 				simpleLogger.debug << "Got message from socket " << pfd.fd << "\n";
 
-				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
-				clientsMutex_.unlock();
+				// Acquire shared_ptr to client while holding lock
+				std::shared_ptr<ISSClientSockEP> client;
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					auto clientIt = clients_.find(pfd.fd);
+					if (clientIt == clients_.end())
+					{
+						// Client was already removed, skip
+						continue;
+					}
+					client = clientIt->second; // Copy shared_ptr, increments refcount
+				}
 
-				if (callback_)
+				// Call getMessage WITHOUT holding lock to avoid blocking other operations
+				int bytesReceived = client->getMessage(msg_.data(), msg_.size());
+
+				if (bytesReceived > 0 && callback_)
 				{
 					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
@@ -116,10 +138,9 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 	}
 }
 
-std::unique_ptr<ISSClientSockEP> UnixStreamServerSockEP::createNewClient()
+std::shared_ptr<ISSClientSockEP> UnixStreamServerSockEP::createNewClient()
 {
-	std::unique_ptr<UnixStreamClientSockEP> newClient =
-	    std::unique_ptr<UnixStreamClientSockEP>(new UnixStreamClientSockEP());
+	std::shared_ptr<UnixStreamClientSockEP> newClient = std::make_shared<UnixStreamClientSockEP>();
 
 	newClient->clearSaddr();
 
@@ -143,18 +164,22 @@ int UnixStreamServerSockEP::sendMessageToClient(int clientId, const char *msg, s
 		simpleLogger.error << "Server is not valid\n";
 		return -1;
 	}
-	// maybe if clientId == -1 then send message to all clients?
-	clientsMutex_.lock();
-	auto clientIt = clients_.find(clientId);
-	clientsMutex_.unlock();
 
-	if (clientIt == clients_.end())
+	// Acquire shared_ptr to client while holding lock
+	std::shared_ptr<ISSClientSockEP> client;
 	{
-		simpleLogger.error << "Could not find client with id " << clientId << "\n";
-		return -1;
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		auto clientIt = clients_.find(clientId);
+		if (clientIt == clients_.end())
+		{
+			simpleLogger.error << "Could not find client with id " << clientId << "\n";
+			return -1;
+		}
+		client = clientIt->second;
 	}
+
 	// MSG_NOSIGNAL prevents SIGPIPE from killing the program if the client goes away
-	return send(clientIt->second->getSock(), msg, msgLen, MSG_NOSIGNAL);
+	return send(client->getSock(), msg, msgLen, MSG_NOSIGNAL);
 }
 
 int UnixStreamServerSockEP::sendMessageToClient(int clientId, const std::string &msg)

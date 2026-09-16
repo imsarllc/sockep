@@ -78,7 +78,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
 		{ // new client connection
-			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
+			std::shared_ptr<ISSClientSockEP> newClient = createNewClient();
 			if (newClient == nullptr)
 			{ // something went wrong with the creation of the client
 				std::cerr << "Could not create new client\n";
@@ -92,11 +92,14 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			newPfd.events = POLLIN;
 			newPfds.push_back(newPfd);
 
-			clientsMutex_.lock();
-			clients_[newPfd.fd] = std::move(newClient);
-			clientsMutex_.unlock();
+			size_t clientCount;
+			{
+				std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+				clients_[newPfd.fd] = newClient;
+				clientCount = clients_.size();
+			}
 
-			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clients_.size());
+			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clientCount);
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -108,13 +111,20 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
-				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
-				                      clients_.size() - 1); // notify before removal!
+				size_t clientCount;
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					clientCount = clients_.size() - 1;
+				}
 
-				clientsMutex_.lock();
-				removePfds.push_back(pfd);
-				clients_.erase(pfd.fd);
-				clientsMutex_.unlock();
+				// Notify before removal - callbacks may need to access the client
+				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
+
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					removePfds.push_back(pfd);
+					clients_.erase(pfd.fd);
+				}
 
 				std::cout << "Client " << pfd.fd << " disconnected.\n";
 			}
@@ -122,27 +132,43 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			{ // data to read
 				simpleLogger.debug << "Got message from socket " << pfd.fd << "\n";
 
-				bool clientDisconnect = false;
-
-				clientsMutex_.lock();
-				int bytesReceived = clients_[pfd.fd]->getMessage(msg_.data(), msg_.size());
-
-				if (bytesReceived == 0)
-				{ // client disconnected
-					clientDisconnect = true;
-					notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED,
-					                      clients_.size() - 1); // notify before removal!
-					removePfds.push_back(pfd);
-					clients_.erase(pfd.fd);
+				// Acquire shared_ptr to client while holding lock
+				std::shared_ptr<ISSClientSockEP> client;
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					auto clientIt = clients_.find(pfd.fd);
+					if (clientIt == clients_.end())
+					{
+						// Client was already removed, skip
+						continue;
+					}
+					client = clientIt->second; // Copy shared_ptr, increments refcount
 				}
-				clientsMutex_.unlock();
+
+				// Call getMessage WITHOUT holding lock to avoid blocking other operations
+				int bytesReceived = client->getMessage(msg_.data(), msg_.size());
+
+				// Re-acquire lock to check if client still exists and handle disconnect
+				bool clientDisconnect = false;
+				size_t clientCount = 0;
+				{
+					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+					auto clientIt = clients_.find(pfd.fd);
+					if (clientIt != clients_.end() && bytesReceived == 0)
+					{ // client disconnected
+						clientDisconnect = true;
+						clientCount = clients_.size() - 1;
+						removePfds.push_back(pfd);
+						clients_.erase(pfd.fd);
+					}
+				}
 
 				if (clientDisconnect)
 				{
-					// cout is slow, use it outside the clientsMutex_ lock
+					notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
 					simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
 				}
-				else if (callback_)
+				else if (bytesReceived > 0 && callback_)
 				{
 					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
@@ -151,9 +177,9 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 	}
 }
 
-std::unique_ptr<ISSClientSockEP> TcpServerSockEP::createNewClient()
+std::shared_ptr<ISSClientSockEP> TcpServerSockEP::createNewClient()
 {
-	std::unique_ptr<TcpClientSockEP> newClient = std::unique_ptr<TcpClientSockEP>(new TcpClientSockEP());
+	std::shared_ptr<TcpClientSockEP> newClient = std::make_shared<TcpClientSockEP>();
 
 	newClient->clearSaddr();
 
@@ -178,18 +204,22 @@ int TcpServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t m
 		simpleLogger.error << "Cannot send message to client, server is not valid\n";
 		return -1;
 	}
-	// maybe if clientId == -1 then send message to all clients?
-	clientsMutex_.lock();
-	auto clientIt = clients_.find(clientId);
-	clientsMutex_.unlock();
 
-	if (clientIt == clients_.end())
+	// Acquire shared_ptr to client while holding lock
+	std::shared_ptr<ISSClientSockEP> client;
 	{
-		simpleLogger.debug << "Could not find client with id " << clientId << "\n";
-		return -1;
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		auto clientIt = clients_.find(clientId);
+		if (clientIt == clients_.end())
+		{
+			simpleLogger.debug << "Could not find client with id " << clientId << "\n";
+			return -1;
+		}
+		client = clientIt->second;
 	}
+
 	// MSG_NOSIGNAL prevents SIGPIPE from killing the program if the client goes away
-	return send(clientIt->second->getSock(), msg, msgLen, MSG_NOSIGNAL);
+	return send(client->getSock(), msg, msgLen, MSG_NOSIGNAL);
 }
 
 int TcpServerSockEP::sendMessageToClient(int clientId, const std::string &msg)

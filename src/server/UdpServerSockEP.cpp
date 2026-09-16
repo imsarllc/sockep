@@ -73,7 +73,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
 		{ // incoming UDP packet
-			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
+			std::shared_ptr<ISSClientSockEP> newClient = createNewClient();
 			newClient->clearSaddr();
 
 			auto len = newClient->getSaddrLen();
@@ -83,7 +83,7 @@ void UdpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
-			std::pair<int, bool> client = addClient(std::move(newClient));
+			std::pair<int, bool> client = addClient(newClient);
 
 			if (client.second) // new client
 			{
@@ -132,9 +132,9 @@ bool UdpServerSockEP::joinMulticastGroup(const std::string &interfaceAddr, const
 	return true;
 }
 
-std::unique_ptr<ISSClientSockEP> UdpServerSockEP::createNewClient()
+std::shared_ptr<ISSClientSockEP> UdpServerSockEP::createNewClient()
 {
-	return std::unique_ptr<UdpClientSockEP>(new UdpClientSockEP());
+	return std::make_shared<UdpClientSockEP>();
 }
 
 int UdpServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t msgLen)
@@ -151,18 +151,21 @@ int UdpServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t m
 		return -1;
 	}
 
-	// maybe if clientId == -1 then send message to all clients?
-	clientsMutex_.lock();
-	auto clientIt = clients_.find(clientId);
-	clientsMutex_.unlock();
-
-	if (clientIt == clients_.end())
+	// Acquire shared_ptr to client while holding lock
+	std::shared_ptr<ISSClientSockEP> client;
 	{
-		simpleLogger.error << "Could not find client with id " << clientId << "\n";
-		return -1;
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		auto clientIt = clients_.find(clientId);
+		if (clientIt == clients_.end())
+		{
+			simpleLogger.error << "Could not find client with id " << clientId << "\n";
+			return -1;
+		}
+		client = clientIt->second;
 	}
+
 	// MSG_NOSIGNAL prevents SIGPIPE from killing the program if the client goes away
-	int retval = sendto(sock_, msg, msgLen, 0, clientIt->second->getSaddr(), clientIt->second->getSaddrLen());
+	int retval = sendto(sock_, msg, msgLen, 0, client->getSaddr(), client->getSaddrLen());
 	if (retval == -1)
 	{
 		simpleLogger.error << "Error sending message, errno: " << errno << "\n";

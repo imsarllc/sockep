@@ -54,7 +54,7 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 		// handle receive socket
 		if (pfd.fd == sock_ && pfd.revents & POLLIN)
 		{ // new datagram
-			std::unique_ptr<ISSClientSockEP> newClient = createNewClient();
+			std::shared_ptr<ISSClientSockEP> newClient = createNewClient();
 			simpleLogger.debug << "Got new client\n";
 			newClient->clearSaddr();
 
@@ -63,7 +63,7 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 			msg_[bytesReceived] = '\0';
 			simpleLogger.debug << "Received " << bytesReceived << " bytes from " << newClient->to_str() << "\n";
 
-			std::pair<int, bool> client = addClient(std::move(newClient));
+			std::pair<int, bool> client = addClient(newClient);
 
 			if (client.second) // new client
 			{
@@ -90,9 +90,9 @@ void UnixDgramServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &p
 	}
 }
 
-std::unique_ptr<ISSClientSockEP> UnixDgramServerSockEP::createNewClient()
+std::shared_ptr<ISSClientSockEP> UnixDgramServerSockEP::createNewClient()
 {
-	return std::unique_ptr<UnixDgramClientSockEP>(new UnixDgramClientSockEP());
+	return std::make_shared<UnixDgramClientSockEP>();
 }
 
 int UnixDgramServerSockEP::sendMessageToClient(int clientId, const char *msg, size_t msgLen)
@@ -108,20 +108,23 @@ int UnixDgramServerSockEP::sendMessageToClient(int clientId, const char *msg, si
 		simpleLogger.error << "Server is not valid\n";
 		return -1;
 	}
-	// maybe if clientId == -1 then send message to all clients?
-	clientsMutex_.lock();
-	auto clientIt = clients_.find(clientId);
-	clientsMutex_.unlock();
 
-	if (clientIt == clients_.end())
+	// Acquire shared_ptr to client while holding lock
+	std::shared_ptr<ISSClientSockEP> client;
 	{
-		simpleLogger.error << "Could not find client with id " << clientId << "\n";
-		// not found
-		return -1;
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		auto clientIt = clients_.find(clientId);
+		if (clientIt == clients_.end())
+		{
+			simpleLogger.error << "Could not find client with id " << clientId << "\n";
+			return -1;
+		}
+		client = clientIt->second;
 	}
-	simpleLogger.debug << "sending " << msgLen << " bytes to " << clientIt->second->to_str() << " with sock " << sock_
-	                   << "\nAnd saddr len: " << clientIt->second->getSaddrLen() << "\n";
-	int retval = sendto(sock_, msg, msgLen, 0, clientIt->second->getSaddr(), clientIt->second->getSaddrLen());
+
+	simpleLogger.debug << "sending " << msgLen << " bytes to " << client->to_str() << " with sock " << sock_
+	                   << "\nAnd saddr len: " << client->getSaddrLen() << "\n";
+	int retval = sendto(sock_, msg, msgLen, 0, client->getSaddr(), client->getSaddrLen());
 	if (retval == -1)
 	{
 		simpleLogger.error << "Failed to send message, errno: " << errno << "\n";

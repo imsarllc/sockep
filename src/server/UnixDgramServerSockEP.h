@@ -21,7 +21,7 @@ private:
 	// void runServer() override; // meant to be the function for the receive thread
 	void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
 	                      std::vector<struct pollfd> &removePfds) override;
-	std::unique_ptr<ISSClientSockEP> createNewClient() override;
+	std::shared_ptr<ISSClientSockEP> createNewClient() override;
 
 	struct sockaddr_un saddr_;
 	socklen_t slen_;
