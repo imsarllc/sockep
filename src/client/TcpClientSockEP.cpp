@@ -136,7 +136,13 @@ int TcpClientSockEP::getMessage(char *msg, const int msgMaxLen)
 	{
 		return -1;
 	}
-	return recv(sock_, msg, msgMaxLen, MSG_NOSIGNAL);
+	int bytesReceived = recv(sock_, msg, msgMaxLen, MSG_NOSIGNAL | MSG_DONTWAIT);
+	if (bytesReceived == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	{
+		// No data available despite poll() - treat as non-error
+		return 0;
+	}
+	return bytesReceived;
 }
 
 /******* SERVER SIDE CLIENT INTERFACE *********/
@@ -184,7 +190,12 @@ int TcpClientSockEP::getSock() const
 
 void TcpClientSockEP::handleIncomingMessage()
 {
-	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL);
+	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
+	if (msgLen == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	{
+		// No data available despite poll() - spurious wakeup, not an error
+		return;
+	}
 	if (callback_)
 	{
 		callback_(msg_.data(), msgLen);
