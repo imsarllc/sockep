@@ -126,11 +126,7 @@ void ServerSockEP::runServer()
 		{
 			auto matchPfd = [&pfdToRemove](struct pollfd &pfd) -> bool
 			{
-				if (memcmp(&pfdToRemove, &pfd, sizeof(struct pollfd)) == 0)
-				{ // found a match
-					return true;
-				}
-				return false;
+				return (pfdToRemove.fd == pfd.fd);
 			};
 			auto pfdToRemoveLoc = find_if(pfds.begin(), pfds.end(), matchPfd);
 			if (pfdToRemoveLoc != pfds.end())
