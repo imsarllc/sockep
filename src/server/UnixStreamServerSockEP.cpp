@@ -73,14 +73,7 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 			newPfd.events = POLLIN;
 			newPfds.push_back(newPfd);
 
-			size_t clientCount;
-			{
-				std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-				clients_[newPfd.fd] = newClient;
-				clientCount = clients_.size();
-			}
-
-			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clientCount);
+			handleConnect(newPfd.fd, newClient);
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -92,22 +85,9 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
-				size_t clientCount;
-				{
-					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-					clientCount = clients_.size() - 1;
-				}
-
-				// Notify before removal - callbacks may need to access the client
-				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
-
-				{
-					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-					removePfds.push_back(pfd);
-					clients_.erase(pfd.fd);
-				}
-
-				simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
+				handleDisconnect(pfd.fd);
+				removePfds.push_back(pfd);
+				close(pfd.fd);
 			}
 			else if (pfd.revents & POLLIN)
 			{ // data to read
@@ -128,6 +108,19 @@ void UnixStreamServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &
 
 				// Call getMessage WITHOUT holding lock to avoid blocking other operations
 				int bytesReceived = client->getMessage(msg_.data(), msg_.size());
+				if (bytesReceived == -2)
+				{
+					// No data available
+					continue;
+				}
+
+				bool clientDisconnect = (bytesReceived == 0 || bytesReceived == -1);
+				if (clientDisconnect)
+				{
+					handleDisconnect(pfd.fd);
+					removePfds.push_back(pfd);
+					close(pfd.fd);
+				}
 
 				if (bytesReceived > 0 && callback_)
 				{
@@ -153,6 +146,7 @@ std::shared_ptr<ISSClientSockEP> UnixStreamServerSockEP::createNewClient()
 		return nullptr;
 	}
 	newClient->setSock(newClientSock);
+	newClient->setRecvNonBlocking(true);
 
 	return newClient;
 }

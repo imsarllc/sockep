@@ -195,6 +195,37 @@ std::vector<int> ServerSockEP::getClientIds()
 	return clientIds;
 }
 
+bool ServerSockEP::handleConnect(int fd, std::shared_ptr<ISSClientSockEP> client)
+{
+	size_t clientCount;
+	{
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		clients_[fd] = client;
+		clientCount = clients_.size();
+	}
+
+	notifyConnectionEvent(fd, ConnectionEvent::CONNECTED, clientCount);
+
+	return true;
+}
+
+bool ServerSockEP::handleDisconnect(int fd)
+{
+	size_t clientCount = 0;
+	{
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		clientCount = clients_.size();
+	}
+
+	notifyConnectionEvent(fd, ConnectionEvent::DISCONNECTED, clientCount - 1);
+	simpleLogger.info << "Client " << fd << " disconnected.\n";
+
+	// Re-acquire lock to erase
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+	size_t erasedCount = clients_.erase(fd);
+	return (erasedCount > 0);
+}
+
 std::string ServerSockEP::getClientAddress(int clientId)
 {
 	const std::lock_guard<std::recursive_mutex> lock(clientsMutex_);

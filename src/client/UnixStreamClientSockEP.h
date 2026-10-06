@@ -19,6 +19,7 @@ public:
 	int sendMessage(const char *msg, size_t msgLen) override;
 	int sendMessage(const std::string &msg) override;
 	std::string to_str() const override;
+	bool setRecvNonBlocking(bool isNonBlocking);
 
 	// for Client interface
 	std::string getMessage() override;
@@ -40,6 +41,7 @@ private:
 	bool ownsSocketFile_{true};
 	struct sockaddr_un saddr_;
 	struct sockaddr_un serverSaddr_;
+	bool isRecvNonBlocking_{false};
 };
 
 } // namespace sockep

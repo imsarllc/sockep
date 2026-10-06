@@ -28,10 +28,11 @@ public:
 	virtual int sendMessage(const std::string &msg) = 0;
 
 	// When using getMessageStr, check isValid() after each call to see if an error occurred
+	// If non-blocking, may return empty string if no messages are available
 	virtual std::string getMessage() = 0;
 
 	// virtual int getMessage(std::array<char, SOCKEP_CLIENT_RECV_MSG_MAX_LEN> &msg) = 0;
-	virtual int getMessage(char *msg, const int msgMaxLen) = 0;
+	virtual int getMessage(char *msg, const int msgMaxLen) = 0; // -1 on error, -2 if no data is available (non-blocking)
 	virtual std::string to_str() const = 0;
 
 	virtual int startRecvThread(MessageCallback callback) = 0;

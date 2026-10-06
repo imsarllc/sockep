@@ -92,14 +92,7 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 			newPfd.events = POLLIN;
 			newPfds.push_back(newPfd);
 
-			size_t clientCount;
-			{
-				std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-				clients_[newPfd.fd] = newClient;
-				clientCount = clients_.size();
-			}
-
-			notifyConnectionEvent(newPfd.fd, ConnectionEvent::CONNECTED, clientCount);
+			handleConnect(newPfd.fd, newClient);
 		}
 		else if (pfd.fd == pipeFd_[0] && pfd.revents & POLLHUP)
 		{ // need to terminate
@@ -111,22 +104,9 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 		{
 			if (pfd.revents & POLLHUP)
 			{ // must be before POLLIN because a hup sets POLLIN bit also
-				size_t clientCount;
-				{
-					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-					clientCount = clients_.size() - 1;
-				}
-
-				// Notify before removal - callbacks may need to access the client
-				notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
-
-				{
-					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-					removePfds.push_back(pfd);
-					clients_.erase(pfd.fd);
-				}
-
-				simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
+				handleDisconnect(pfd.fd);
+				removePfds.push_back(pfd);
+				close(pfd.fd);
 			}
 			else if (pfd.revents & POLLIN)
 			{ // data to read
@@ -147,28 +127,21 @@ void TcpServerSockEP::handlePfdUpdates(const std::vector<struct pollfd> &pfds, s
 
 				// Call getMessage WITHOUT holding lock to avoid blocking other operations
 				int bytesReceived = client->getMessage(msg_.data(), msg_.size());
-
-				// Re-acquire lock to check if client still exists and handle disconnect
-				bool clientDisconnect = false;
-				size_t clientCount = 0;
+				if (bytesReceived == -2)
 				{
-					std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
-					auto clientIt = clients_.find(pfd.fd);
-					if (clientIt != clients_.end() && bytesReceived == 0)
-					{ // client disconnected
-						clientDisconnect = true;
-						clientCount = clients_.size() - 1;
-						removePfds.push_back(pfd);
-						clients_.erase(pfd.fd);
-					}
+					// No data available
+					continue;
 				}
 
+				bool clientDisconnect = (bytesReceived == 0 || bytesReceived == -1);
 				if (clientDisconnect)
 				{
-					notifyConnectionEvent(pfd.fd, ConnectionEvent::DISCONNECTED, clientCount);
-					simpleLogger.info << "Client " << pfd.fd << " disconnected.\n";
+					handleDisconnect(pfd.fd);
+					removePfds.push_back(pfd);
+					close(pfd.fd);
 				}
-				else if (bytesReceived > 0 && callback_)
+
+				if (bytesReceived > 0 && callback_)
 				{
 					callback_(pfd.fd, msg_.data(), bytesReceived);
 				}
@@ -193,6 +166,7 @@ std::shared_ptr<ISSClientSockEP> TcpServerSockEP::createNewClient()
 	}
 	newClient->setSock(newClientSock);
 	newClient->configureOptions(options_);
+	newClient->setRecvNonBlocking(true);
 
 	return newClient;
 }
