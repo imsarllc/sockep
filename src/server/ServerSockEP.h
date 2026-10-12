@@ -63,6 +63,9 @@ protected:
 	// Returns a pair of {int clientId, bool isNewClient}
 	virtual std::pair<int, bool> addClient(std::shared_ptr<ISSClientSockEP> newClient);
 
+	virtual bool handleConnect(int fd, std::shared_ptr<ISSClientSockEP> client);
+	virtual bool handleDisconnect(int fd);
+
 	void runServer();
 	virtual void handlePfdUpdates(const std::vector<struct pollfd> &pfds, std::vector<struct pollfd> &newPfds,
 	                              std::vector<struct pollfd> &removePfds) = 0;

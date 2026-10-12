@@ -1,6 +1,8 @@
 #include "UnixStreamClientSockEP.h"
 
+#include <fcntl.h>
 #include <iostream>
+#include <unistd.h>
 
 #include "simpleLogger/SimpleLogger.h"
 
@@ -81,8 +83,24 @@ std::string UnixStreamClientSockEP::to_str() const
 std::string UnixStreamClientSockEP::getMessage()
 {
 	int bytesReceived = getMessage(msg_.data(), msg_.size());
+	if (bytesReceived == -1)
+	{
+		isValid_ = false;
+		return "";
+	}
+	else if (bytesReceived == -2)
+	{ // no data available
+		return "";
+	}
+
 	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
+}
+
+bool UnixStreamClientSockEP::setRecvNonBlocking(bool isNonBlocking)
+{
+	isRecvNonBlocking_ = isNonBlocking;
+	return true;
 }
 
 /******* CLIENT INTERFACE **********/
@@ -92,11 +110,18 @@ int UnixStreamClientSockEP::getMessage(char *msg, const int msgMaxLen)
 	{
 		return -1;
 	}
-	int bytesReceived = recv(sock_, msg, msgMaxLen, MSG_NOSIGNAL | MSG_DONTWAIT);
+
+
+	int flags = MSG_NOSIGNAL;
+	if (isRecvNonBlocking_)
+	{
+		flags |= MSG_DONTWAIT;
+	}
+
+	int bytesReceived = recv(sock_, msg, msgMaxLen, flags);
 	if (bytesReceived == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
 	{
-		// No data available despite poll() - treat as non-error
-		return 0;
+		return -2;
 	}
 	return bytesReceived;
 }
@@ -146,10 +171,9 @@ int UnixStreamClientSockEP::getSock() const
 
 void UnixStreamClientSockEP::handleIncomingMessage()
 {
-	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
-	if (msgLen == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL);
+	if (msgLen == -1)
 	{
-		// No data available despite poll() - spurious wakeup, not an error
 		return;
 	}
 	if (callback_)

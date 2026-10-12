@@ -22,6 +22,7 @@ public:
 	int sendMessage(const std::string &msg) override;
 	std::string to_str() const override;
 	void configureOptions(const TcpOptions &options);
+	bool setRecvNonBlocking(bool isNonBlocking);
 
 	// for Client interface
 	std::string getMessage() override;
@@ -43,6 +44,7 @@ private:
 
 	struct sockaddr_in saddr_;
 	struct sockaddr_in serverSaddr_;
+	bool isRecvNonBlocking_{false};
 };
 
 } // namespace sockep

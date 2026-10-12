@@ -1,7 +1,9 @@
 #include "TcpClientSockEP.h"
 
 
+#include <fcntl.h>
 #include <netinet/tcp.h> //TCP_*
+#include <unistd.h>
 
 #include <array>
 #include <cstring> // memset
@@ -120,13 +122,25 @@ std::string TcpClientSockEP::to_str() const
 std::string TcpClientSockEP::getMessage()
 {
 	int bytesReceived = getMessage(msg_.data(), msg_.size());
+
 	if (bytesReceived == -1)
 	{ // an error has occurred
 		isValid_ = false;
 		return "";
 	}
+	else if (bytesReceived == -2)
+	{ // no data available
+		return "";
+	}
+
 	std::string receiveStr(msg_.data(), bytesReceived);
 	return receiveStr;
+}
+
+bool TcpClientSockEP::setRecvNonBlocking(bool isNonBlocking)
+{
+	isRecvNonBlocking_ = isNonBlocking;
+	return true;
 }
 
 /******* CLIENT INTERFACE **********/
@@ -136,12 +150,19 @@ int TcpClientSockEP::getMessage(char *msg, const int msgMaxLen)
 	{
 		return -1;
 	}
-	int bytesReceived = recv(sock_, msg, msgMaxLen, MSG_NOSIGNAL | MSG_DONTWAIT);
+
+	int flags = MSG_NOSIGNAL;
+	if (isRecvNonBlocking_)
+	{
+		flags |= MSG_DONTWAIT;
+	}
+
+	int bytesReceived = recv(sock_, msg, msgMaxLen, flags);
 	if (bytesReceived == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
 	{
-		// No data available despite poll() - treat as non-error
-		return 0;
+		return -2;
 	}
+
 	return bytesReceived;
 }
 
@@ -190,10 +211,9 @@ int TcpClientSockEP::getSock() const
 
 void TcpClientSockEP::handleIncomingMessage()
 {
-	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL | MSG_DONTWAIT);
-	if (msgLen == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	int msgLen = recv(sock_, msg_.data(), msg_.size(), MSG_NOSIGNAL);
+	if (msgLen == -1)
 	{
-		// No data available despite poll() - spurious wakeup, not an error
 		return;
 	}
 	if (callback_)

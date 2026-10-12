@@ -126,11 +126,7 @@ void ServerSockEP::runServer()
 		{
 			auto matchPfd = [&pfdToRemove](struct pollfd &pfd) -> bool
 			{
-				if (memcmp(&pfdToRemove, &pfd, sizeof(struct pollfd)) == 0)
-				{ // found a match
-					return true;
-				}
-				return false;
+				return (pfdToRemove.fd == pfd.fd);
 			};
 			auto pfdToRemoveLoc = find_if(pfds.begin(), pfds.end(), matchPfd);
 			if (pfdToRemoveLoc != pfds.end())
@@ -197,6 +193,37 @@ std::vector<int> ServerSockEP::getClientIds()
 	}
 
 	return clientIds;
+}
+
+bool ServerSockEP::handleConnect(int fd, std::shared_ptr<ISSClientSockEP> client)
+{
+	size_t clientCount;
+	{
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		clients_[fd] = client;
+		clientCount = clients_.size();
+	}
+
+	notifyConnectionEvent(fd, ConnectionEvent::CONNECTED, clientCount);
+
+	return true;
+}
+
+bool ServerSockEP::handleDisconnect(int fd)
+{
+	size_t clientCount = 0;
+	{
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+		clientCount = clients_.size();
+	}
+
+	notifyConnectionEvent(fd, ConnectionEvent::DISCONNECTED, clientCount - 1);
+	simpleLogger.info << "Client " << fd << " disconnected.\n";
+
+	// Re-acquire lock to erase
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex_);
+	size_t erasedCount = clients_.erase(fd);
+	return (erasedCount > 0);
 }
 
 std::string ServerSockEP::getClientAddress(int clientId)
